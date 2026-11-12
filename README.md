@@ -6,7 +6,7 @@ GlasKit liest eine PlanKit-Datei (`*.probenplan`) **nur lesend** und zeigt die G
 
 ![Vorschau](docs/vorschau.png)
 
-Aktuelle Version: **1.1.0** (steht oben neben dem Namen).
+Aktuelle Version: **1.2.0** (steht oben neben dem Namen).
 
 ## Benutzen
 
@@ -16,6 +16,7 @@ Oder `index.html` in Edge oder Chrome öffnen (oder über GitHub Pages) → „P
 
 - Ziehen = drehen · Umschalt + Ziehen = verschieben · Mausrad = Zoom
 - Klick auf eine Probe: Karte mit dem Wert wie im Prüfbericht, Geschosse darüber werden durchsichtig
+- **Wände** (nur bei Plänen, die in PlanKit als Skizze gezeichnet sind): Wände als Glas bis knapp unter das nächste Geschoss, Türen offen (mit Sturz), Fenster mit Brüstung und Glasscheibe, der Brandraum vom Boden her warm angeleuchtet. Schalter „Wände“ unten. PDF- und Bildpläne bleiben flache Platten.
 - „Rundgang“: Kamerafahrt von Probe zu Probe (Leertaste = Pause, Pfeiltasten, Esc)
 - „Bild speichern“: PNG der aktuellen Ansicht als Download
 
@@ -26,6 +27,10 @@ Oder `index.html` in Edge oder Chrome öffnen (oder über GitHub Pages) → „P
 - Werte und Bezeichnungen stehen so da wie im Prüfbericht. Es wird nichts interpoliert. Ohne Bewertungsskala im Projekt bleibt eine Probe grau.
 - Der Rauch am Brandherd ist reine Dekoration, keine Berechnung.
 - Sind nicht alle Pläne kalibriert, ist die Darstellung nicht maßstäblich; Geschosse werden mittig gestapelt.
+
+## Wände aus der Skizze
+
+`plan.sketch` (PlanKit `src/sketch.ts`, cm): Raumrechtecke und freie Wände; gemeinsame Kanten benachbarter Räume werden zu einer Wand zusammengelegt, Türen/Fenster schneiden sie (gleiche Lage-Regel wie PlanKit: parallel, auf der Linie). Höhen als Anteil des Geschossabstands (Wand 0,94 · Sturz 0,72 · Brüstung 0,30), daher passen Proben (Decke 0,9) immer unter die Wandkrone. Wände und Proben werden gemeinsam von hinten nach vorn gezeichnet (Wände dafür in Stücke ≤ 0,45 Welteinheiten geteilt). Passt die Skizze nicht zur Plangröße oder ist der Plan gedreht/zugeschnitten, bleibt er flach.
 
 ## Projektübergabe (`#projekt=`)
 

@@ -73,6 +73,34 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     assert.deepEqual(dateien,[LEER,PROJ,PROJ+'/_Spektron',PROJ+'/_Spektron/PlanKit',`${PROJ}/_Spektron/PlanKit/Probenplan ${PROJ} (vorher 2026-11-01 10-00-00-000 abc).probenplan`,`${PROJ}/_Spektron/PlanKit/Probenplan ${PROJ}.probenplan`,PROJ+'/_Spektron/_Projekt.json'].sort());
     console.log('A ok');
   }
+  if(soll('b')){
+    // Beispielgebäude: EG und 1. OG sind Skizzen → Glaswände, DG ist ein Bild → flach
+    await page.goto(url);await page.waitForFunction(()=>typeof S!=='undefined'&&S.geschosse.length===3);await page.locator('#sBeispiel').click();
+    const info=await page.evaluate(()=>S.geschosse.map(g=>({n:g.name,w:g.waende?g.waende.stuecke.length:0,b:g.waende?g.waende.brand.length:0,arten:g.skizze?[...new Set(g.skizze.stuecke.map(s=>s.art))].sort():[]})));
+    assert.deepEqual(info.map(x=>x.n),['EG','1. OG','DG']);
+    assert.ok(info[0].w>20&&info[1].w>20&&info[2].w===0,JSON.stringify(info));
+    assert.deepEqual(info[0].arten,['fenster','tuer','wand']);assert.equal(info[0].b,1,'Küche = Brandraum');assert.equal(info[1].b,0);
+    // gemeinsame Kanten nur einmal: Mittelwand x=600 im EG = eine Strecke (oben + unten) minus zwei Türen → 3 Wandstücke + 2 Türen
+    const mitte=await page.evaluate(()=>S.geschosse[0].skizze.stuecke.filter(s=>s.x1===600&&s.x2===600).map(s=>s.art+':'+s.y1+'-'+s.y2));
+    assert.deepEqual(mitte,['wand:40-150','tuer:150-240','wand:240-560','tuer:560-650','wand:650-760']);
+    assert.ok(await page.locator('#waende').isVisible(),'Schalter „Wände“ sichtbar');
+    assert.equal(await page.locator('#waende').getAttribute('aria-pressed'),'true');
+    await page.waitForTimeout(4200);await shot('b1-beispiel-waende');
+    // Geschwindigkeit: ein Bild mit Wänden zeichnen (Software-Canvas, wie über RDP)
+    const ms=await page.evaluate(()=>{const t=performance.now();for(let i=0;i<20;i++)bild(performance.now());return (performance.now()-t)/20;});
+    console.log('Bild mit Wänden: '+ms.toFixed(1)+' ms');
+    // Probe hinter/vor einer Wand: auf eine Probe im EG zoomen
+    await page.evaluate(()=>{S.dreh=false;const g=S.geschosse[0],m=g.marker.find(x=>x.label==='P1');waehle(m,g,true);});await page.waitForTimeout(1600);await shot('b2-probe-im-brandraum');
+    await page.evaluate(()=>{karteZu();S.kam={yaw:-2.4,pitch:.38,zoom:1.5,tx:-1.5,ty:-1,tz:1.6};S.ziel=null;});await page.waitForTimeout(500);await shot('b3-flacher-blick');
+    await page.locator('#waende').click();assert.equal(await page.locator('#waende').getAttribute('aria-pressed'),'false');await shot('b4-ohne-waende');
+    await page.locator('#waende').click();
+    // Plan ohne Skizze (nur Bild) → keine Wände, kein Schalter
+    await page.evaluate(async()=>{const p=beispiel();for(const x of [p.plan,...p.sheets.map(s=>s.plan).filter(Boolean)])delete x.sketch;await projektLaden(p,'Ohne Skizze');});
+    assert.equal(await page.evaluate(()=>S.geschosse.every(g=>!g.waende)),true);assert.equal(await page.locator('#waende').isVisible(),false);
+    // Skizze passt nicht zur Plangröße → lieber flach
+    assert.equal(await page.evaluate(()=>{const p=beispiel();p.plan.width=999;return skizzeLesen(p.plan);}),null);
+    console.log('B ok');
+  }
   assert.deepEqual(fehler,[]);
   await browser.close();server.close();console.log('OK',welche);
 })().catch(e=>{console.error(e);process.exit(1);});
