@@ -11,6 +11,7 @@
   Farben und Stufen: dieselben Regeln wie PlanKits Ergebniskarte / ResultKit (Hauptwert je Probenart, VdS-Referenzen, KORROSION-CHLORID v2).
   Es wird nichts interpoliert und kein Wert verändert. Der Rauch ist reine Dekoration.
   Drei Darstellungen (Fußleiste, je Browser gemerkt): „Modell“ (Standard – weißes Kartonmodell, helle Seite), „Glas“, „Papier“.
+  Wände, Fotowände und wandbündige Wischfelder: bei Plänen mit PlanKit-Skizze und (ab 1.6.0) bei Bild-/PDF-Plänen mit in PlanKit geprüfter Nachzeichnung.
   GlasKit schreibt nie in den Projektordner.
 -->
 <style>
@@ -181,7 +182,7 @@ body.modell #ziehen{border-color:#2a2a28;background:rgba(246,244,239,.6);color:#
 <body>
 <header>
   <svg viewBox="44 4 106 101" aria-hidden="true"><g fill="#363A90"><circle cx="93.44" cy="14.19" r="3.15"/><circle cx="117.44" cy="17.06" r="8.1"/><circle cx="75.19" cy="17.94" r="8.1"/><circle cx="94.56" cy="27.06" r="4.18"/><circle cx="130.94" cy="31.94" r="3.15"/><circle cx="60.44" cy="36.94" r="3.15"/><circle cx="119.81" cy="38.81" r="4.18"/><circle cx="71.81" cy="43.06" r="4.18"/><circle cx="102.31" cy="43.81" r="5.78"/><circle cx="139.94" cy="54.19" r="8.1"/><circle cx="54.06" cy="54.69" r="8.1"/><circle cx="86.56" cy="56.44" r="5.78"/><circle cx="103.81" cy="63.94" r="5.78"/><circle cx="121.94" cy="67.44" r="4.18"/><circle cx="74.44" cy="71.06" r="4.18"/><circle cx="133.94" cy="72.19" r="3.15"/><circle cx="62.81" cy="77.06" r="3.15"/><circle cx="99.81" cy="82.56" r="4.18"/><circle cx="119.44" cy="91.44" r="8.1"/><circle cx="75.81" cy="92.19" r="8.1"/><circle cx="99.81" cy="95.56" r="3.15"/></g><g stroke="#363A90"><line x1="93.44" y1="14.19" x2="117.44" y2="17.06" stroke-width="1.4"/><line x1="75.19" y1="17.94" x2="60.44" y2="36.94" stroke-width="1.4"/><line x1="130.94" y1="31.94" x2="139.94" y2="54.19" stroke-width="1.4"/><line x1="54.06" y1="54.69" x2="62.81" y2="77.06" stroke-width="1.4"/><line x1="133.94" y1="72.19" x2="119.44" y2="91.44" stroke-width="1.4"/><line x1="75.81" y1="92.19" x2="99.81" y2="95.56" stroke-width="1.4"/><line x1="94.56" y1="27.06" x2="102.31" y2="43.81" stroke-width="1.17"/><line x1="86.56" y1="56.44" x2="74.44" y2="71.06" stroke-width="1.17"/><line x1="103.81" y1="63.94" x2="121.94" y2="67.44" stroke-width="1.17"/></g></svg>
-  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.5.0</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
+  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.6.0</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
   <div id="projekt"><b id="pName">–</b><span id="pInfo"></span></div>
   <button class="btn primary" id="ordner">Projektordner öffnen</button>
   <button class="btn" id="datei">Plan-Datei öffnen …</button>
@@ -217,8 +218,8 @@ body.modell #ziehen{border-color:#2a2a28;background:rgba(246,244,239,.6);color:#
       <button class="chip" id="papier" data-stil="papier" aria-pressed="false" title="Papier: der Plan wie gedruckt">Papier</button>
     </span>
     <span class="trenner"></span>
-    <button class="chip" id="waende" aria-pressed="true" title="Wände aus der PlanKit-Skizze hochziehen (nur bei gezeichneten Skizzen)">Wände</button>
-    <button class="chip" id="fotoW" aria-pressed="false" style="display:none" title="Hängt die Fotos aus FotoKit an die Wände ihres Raums (FotoKit „Raum / Abschnitt“ = Raumname der Skizze). Reihenfolge wie in FotoKit – an welcher Wand ein Foto hängt, ist nicht belegt. Die Fotos werden dafür einmal klein eingelesen.">Fotowände</button>
+    <button class="chip" id="waende" aria-pressed="true" title="Wände aus der PlanKit-Skizze oder einer in PlanKit geprüften Nachzeichnung hochziehen">Wände</button>
+    <button class="chip" id="fotoW" aria-pressed="false" style="display:none" title="Hängt die Fotos aus FotoKit an die Wände ihres Raums (FotoKit „Raum / Abschnitt“ = Raumname der Skizze bzw. Nachzeichnung). Reihenfolge wie in FotoKit – an welcher Wand ein Foto hängt, ist nicht belegt. Die Fotos werden dafür einmal klein eingelesen.">Fotowände</button>
     <button class="chip" id="rauch" aria-pressed="true" title="Rauch am Brandherd – reine Dekoration, keine Berechnung">Rauch</button>
     <button class="chip" id="dreh" aria-pressed="true" title="Langsam weiterdrehen">Drehen</button>
     <button class="chip" id="werte" aria-pressed="false" title="Werte an den Kugeln zeigen">Werte</button>
@@ -609,7 +610,7 @@ root.SpektronOrdner = api;
 </script>
 <script>
 'use strict';
-const VERSION='1.5.0';
+const VERSION='1.6.0';
 /* ================= Bewertung: aus PlanKit (src/results.ts) übernommen – dort ändern, hier mitändern ================= */
 const UNRATED='#c3ccd5',BELOW_LIMIT='#749bb5',NOT_DETECTED='#8b83a8',NOT_DETERMINED='#9d8975';
 function labNumber(raw){
@@ -724,7 +725,7 @@ function planMatrix(plan){
 }
 
 /* ================= Wände aus PlanKit-Skizzen (src/sketch.ts: Räume als Rechtecke in cm, freie Wände, Türen/Fenster, fire = Brandraum) =================
-   Nur Pläne mit plan.sketch bekommen Wände; PDF-/Bildpläne bleiben flache Platten. Die Skizze wird nur gelesen. Gemeinsame Kanten
+   Pläne mit plan.sketch bekommen Wände (Bild-/PDF-Pläne mit geprüfter Nachzeichnung: siehe nachzeichnungLesen); andere bleiben flache Platten. Die Skizze wird nur gelesen. Gemeinsame Kanten
    benachbarter Räume werden zu einer Wand zusammengelegt (sonst doppelt dunkles Glas), Türen und Fenster schneiden die Wand. */
 const SK_MAX={rooms:200,walls:400,openings:400,size:20000};   // wie PlanKit (MAX_ROOMS, MAX_WALLS, MAX_OPENINGS, MAX_SIZE)
 function skizzeLesen(plan){
@@ -765,13 +766,118 @@ function skizzeLesen(plan){
   for(const s of stuecke){const mx=(s.x1+s.x2)/2,my=(s.y1+s.y2)/2;s.brand=brandRaeume.some(r=>aufRand(mx,my,r));}
   return stuecke.length||raeume.length?{stuecke,brand:brandRaeume.map(r=>({x:r.x,y:r.y,w:r.w,h:r.h,name:String(r.name??'')})),raeume:raeume.map(r=>({x:r.x,y:r.y,w:r.w,h:r.h,name:String(r.name??'').trim()})),schematic:sk.schematic===true}:null;
 }
-/** Wandstücke in Weltkoordinaten, in kurze Stücke geteilt – so lassen sie sich mit den Proben richtig nach Tiefe sortieren. */
+
+/* ================= Wände aus einer geprüften PlanKit-Nachzeichnung (plan.trace, PlanKit ab 2.3.0/2.4.0, src/trace.ts) =================
+   rooms: Rechtecke {id,name,x,y,w,h,fire?,joins?} · walls: freie Strecken (auch schräg) · openings: Tür/Fenster {kind,x,y,a (Grad),w,side} ·
+   checked: {date,by} = in PlanKit bestätigt. Koordinaten sind Planeinheiten des FERTIG vorbereiteten Plans – dieselben wie die Probenpunkte;
+   Drehen, Zuschneiden und Ausrichten hat PlanKit schon mitgenommen. Darum hier keine Größengleichheit und keine Ablehnung wegen plan.preparation,
+   nur: alles liegt im Plan. Wände NUR bei geprüfter Nachzeichnung (ungeprüft = flache Platte mit einer Zeile Hinweis). Es gibt keine Zentimeter:
+   alle Toleranzen sind Anteile der längeren Planseite. Räume werden nur über joins zusammengelegt (ausdrücklich verbunden), NIE über den Namen –
+   gleichnamige, nicht verbundene Rechtecke bleiben getrennte Räume mit Wand dazwischen. Die Nachzeichnung wird nur gelesen. */
+const NZ_MAX={rooms:200,walls:1000,openings:400};   // wie PlanKit (MAX_TRACE_ROOMS, MAX_TRACE_WALLS, MAX_TRACE_OPENINGS)
+// Anteile der längeren Planseite – an Stelle der festen Zentimeter der Skizze (gleiche Linie 0,5 · Mindestlänge 1 · Öffnung auf der Wand 2 · kürzestes Stück 0,5 · Brandraum-Rand 1 cm)
+const NZ_TOL={kante:.0005,min:.001,oeff:.002,stueck:.0005,rand:.001};
+// Ansicht-Feld an die Wand: kalibriert bis 1 m, sonst bis 2,5 % der längeren Planseite (PlanKits Standardbreite einer Tür, DOOR_SHARE). Darstellung, kein Messwert.
+const NZ_ANSICHT=.025;
+const NZ_HINWEIS={ungeprueft:'Nachzeichnung noch nicht geprüft – in PlanKit bestätigen',draussen:'Nachzeichnung liegt nicht ganz im Plan – bleibt flach',
+  ungueltig:'Nachzeichnung ist ungültig – bleibt flach',beides:'Skizze und Nachzeichnung zugleich – bleibt flach'};
+/** Gibt {skizze} (wie skizzeLesen, art 'nachzeichnung') oder {hinweis} zurück; null, wenn der Plan keine Nachzeichnung hat. */
+function nachzeichnungLesen(plan){
+  const t=plan&&plan.trace;if(t===undefined||t===null)return null;
+  if(plan.sketch!==undefined&&plan.sketch!==null)return {hinweis:NZ_HINWEIS.beides};   // PlanKit lehnt das ab – hier wird nicht gewählt
+  const zahl=v=>typeof v==='number'&&Number.isFinite(v),id=v=>typeof v==='string'&&/^[\w-]{1,80}$/.test(v),W=plan.width,Hh=plan.height,L=Math.max(W,Hh);
+  if(!t||typeof t!=='object'||!Array.isArray(t.rooms)||!Array.isArray(t.walls)||!Array.isArray(t.openings)||!(L>0))return {hinweis:NZ_HINWEIS.ungueltig};
+  if(t.rooms.length>NZ_MAX.rooms||t.walls.length>NZ_MAX.walls||t.openings.length>NZ_MAX.openings)return {hinweis:NZ_HINWEIS.ungueltig};
+  // Aufbau wie PlanKits validateTrace (nur, was für die Geometrie zählt)
+  if(t.rooms.some(r=>!r||!id(r.id)||typeof r.name!=='string'||![r.x,r.y,r.w,r.h].every(zahl)||!(r.w>0)||!(r.h>0)||(r.joins!==undefined&&!id(r.joins)))
+    ||t.walls.some(w=>!w||![w.x1,w.y1,w.x2,w.y2].every(zahl)||Math.hypot(w.x2-w.x1,w.y2-w.y1)<=0)
+    ||t.openings.some(o=>!o||(o.kind!=='door'&&o.kind!=='window')||![o.x,o.y,o.a,o.w].every(zahl)||!(o.w>0)))return {hinweis:NZ_HINWEIS.ungueltig};
+  const nachId=new Map(t.rooms.map(r=>[r.id,r]));if(nachId.size!==t.rooms.length)return {hinweis:NZ_HINWEIS.ungueltig};
+  // joins: zeigt auf ein vorhandenes Hauptrechteck – kein Selbstbezug, keine Kette (wie PlanKit)
+  for(const r of t.rooms)if(r.joins!==undefined){const m=nachId.get(r.joins);if(!m||m===r||m.joins!==undefined)return {hinweis:NZ_HINWEIS.ungueltig};}
+  // Die einzige Prüfung gegen den Plan: alles liegt darin (PlanKit rundet auf 0,01)
+  const drin=(x,y)=>x>=-.01&&y>=-.01&&x<=W+.01&&y<=Hh+.01;
+  if(t.rooms.some(r=>!drin(r.x,r.y)||!drin(r.x+r.w,r.y+r.h))||t.walls.some(w=>!drin(w.x1,w.y1)||!drin(w.x2,w.y2))||t.openings.some(o=>!drin(o.x,o.y)))return {hinweis:NZ_HINWEIS.draussen};
+  const c=t.checked;if(!c||typeof c!=='object'||typeof c.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(c.date)||typeof c.by!=='string'||!c.by.trim())return {hinweis:NZ_HINWEIS.ungeprueft};
+  const T={kante:NZ_TOL.kante*L,min:NZ_TOL.min*L,oeff:NZ_TOL.oeff*L,stueck:NZ_TOL.stueck*L,rand:NZ_TOL.rand*L};
+  // Räume: Hauptrechteck + ausdrücklich verbundene Teile. Name und Brandraum gelten vom Hauptrechteck.
+  const haupt=r=>r.joins!==undefined?nachId.get(r.joins):r,gruppen=new Map();
+  for(const r of t.rooms){const m=haupt(r);(gruppen.get(m.id)||gruppen.set(m.id,{m,teile:[]}).get(m.id)).teile.push(r);}
+  // Kanten wie PlanKit (traceSegments): die gemeinsame Kante verbundener Rechtecke ist KEINE Wand. EPS = PlanKits Rundungstoleranz (0,005 Planeinheiten).
+  const EPS=.005,kanten=[];
+  const ohne=(a,b,loecher)=>{let teile=[[a,b]];for(const [h0,h1] of loecher)teile=teile.flatMap(([p,q])=>h1<=p+EPS||h0>=q-EPS?[[p,q]]:[[p,Math.min(q,h0)],[Math.max(p,h1),q]].filter(([u,v])=>v-u>EPS));return teile;};
+  for(const {teile} of gruppen.values())for(const r of teile){
+    const rest=teile.filter(o=>o!==r),x1=r.x+r.w,y1=r.y+r.h;
+    // im Uhrzeigersinn (y nach unten): oben →, rechts ↓, unten ←, links ↑ – innen liegt immer rechts der Laufrichtung
+    const quer=(y,innen,rueck)=>{for(const [a,b] of ohne(r.x,x1,rest.filter(innen).map(o=>[o.x,o.x+o.w])))kanten.push(rueck?{x1:b,y1:y,x2:a,y2:y,raum:r}:{x1:a,y1:y,x2:b,y2:y,raum:r});};
+    const hoch=(x,innen,rueck)=>{for(const [a,b] of ohne(r.y,y1,rest.filter(innen).map(o=>[o.y,o.y+o.h])))kanten.push(rueck?{x1:x,y1:b,x2:x,y2:a,raum:r}:{x1:x,y1:a,x2:x,y2:b,raum:r});};
+    quer(r.y,o=>o.y<r.y-EPS&&r.y<=o.y+o.h+EPS,false);hoch(x1,o=>o.x<=x1+EPS&&x1<o.x+o.w-EPS,false);
+    quer(y1,o=>o.y<=y1+EPS&&y1<o.y+o.h-EPS,true);hoch(r.x,o=>o.x<r.x-EPS&&r.x<=o.x+o.w+EPS,true);
+  }
+  // Zu Wandstrecken zusammenlegen: gleiche Linie (bis T.kante) = eine Wand. Die Lage bleibt die gezeichnete (Mittel der zusammengelegten Kanten, keine Rundung).
+  const gerade={h:[],v:[]},schraeg=[];
+  const linie=(x1,y1,x2,y2)=>{if(Math.abs(y1-y2)<T.kante)gerade.h.push({c:(y1+y2)/2,a:Math.min(x1,x2),b:Math.max(x1,x2)});
+    else if(Math.abs(x1-x2)<T.kante)gerade.v.push({c:(x1+x2)/2,a:Math.min(y1,y2),b:Math.max(y1,y2)});
+    else if(Math.hypot(x2-x1,y2-y1)>=T.min)schraeg.push({x1,y1,x2,y2});};
+  for(const k of kanten)linie(k.x1,k.y1,k.x2,k.y2);
+  for(const w of t.walls)linie(w.x1,w.y1,w.x2,w.y2);
+  const strecken=[];
+  for(const art of ['h','v']){const L2=gerade[art].sort((p,q)=>p.c-q.c);
+    for(let i=0;i<L2.length;){let j=i;while(j<L2.length&&L2[j].c-L2[i].c<=T.kante)j++;
+      const bund=L2.slice(i,j).sort((p,q)=>p.a-q.a);let cur=null;
+      const fertig=()=>{if(!cur||cur.b-cur.a<T.min)return;const c=cur.s/cur.n;strecken.push(art==='h'?{x1:cur.a,y1:c,x2:cur.b,y2:c}:{x1:c,y1:cur.a,x2:c,y2:cur.b});};
+      for(const s of bund){if(cur&&s.a<=cur.b+T.kante){cur.b=Math.max(cur.b,s.b);cur.s+=s.c;cur.n++;}else{fertig();cur={a:s.a,b:s.b,s:s.c,n:1};}}fertig();i=j;}}
+  const gleich=(p,q)=>Math.hypot(p.x1-q.x1,p.y1-q.y1)<=T.kante&&Math.hypot(p.x2-q.x2,p.y2-q.y2)<=T.kante||Math.hypot(p.x1-q.x2,p.y1-q.y2)<=T.kante&&Math.hypot(p.x2-q.x1,p.y2-q.y1)<=T.kante;
+  const einmal=[];for(const w of schraeg)if(!einmal.some(q=>gleich(w,q))){einmal.push(w);strecken.push(w);}
+  // Türen und Fenster auf ihre Wand legen (parallel, auf der Linie, Mitte innerhalb) und mit der gespeicherten Breite herausschneiden – kein Maß
+  const stuecke=[];
+  for(const st of strecken){
+    const dx=st.x2-st.x1,dy=st.y2-st.y1,len=Math.hypot(dx,dy),ux=dx/len,uy=dy/len,wink=Math.atan2(dy,dx),luecken=[];
+    for(const o of t.openings){const s=(o.x-st.x1)*ux+(o.y-st.y1)*uy,d=Math.abs((o.x-st.x1)*uy-(o.y-st.y1)*ux);
+      if(d>T.oeff||s<=0||s>=len||Math.abs(Math.sin(wink-o.a*Math.PI/180))>.02)continue;
+      luecken.push([Math.max(0,s-o.w/2),Math.min(len,s+o.w/2),o.kind==='door'?'tuer':'fenster']);}
+    luecken.sort((p,q)=>p[0]-q[0]);let pos=0;
+    const teil=(a,b,art)=>{if(b-a<T.stueck)return;stuecke.push({x1:st.x1+ux*a,y1:st.y1+uy*a,x2:st.x1+ux*b,y2:st.y1+uy*b,art});};
+    for(const [a,b,art] of luecken){if(a<pos)continue;teil(pos,a,'wand');teil(a,b,art);pos=b;}teil(pos,len,'wand');
+  }
+  // Brandraum (am Hauptrechteck markiert): Wandstück auf dem Rand eines seiner Rechtecke → warm angeleuchtet
+  const brandTeile=[...gruppen.values()].filter(x=>x.m.fire===true).flatMap(x=>x.teile);
+  const aufRand=(x,y,r)=>x>=r.x-T.rand&&x<=r.x+r.w+T.rand&&y>=r.y-T.rand&&y<=r.y+r.h+T.rand&&(Math.abs(x-r.x)<T.rand||Math.abs(x-r.x-r.w)<T.rand||Math.abs(y-r.y)<T.rand||Math.abs(y-r.y-r.h)<T.rand);
+  for(const s of stuecke){const mx=(s.x1+s.x2)/2,my=(s.y1+s.y2)/2;s.brand=brandTeile.some(r=>aufRand(mx,my,r));}
+  // Umriss je Raum (für die Fotowände): die Außenkanten aller Rechtecke des Raums als Züge im Uhrzeigersinn, beginnend oben links (bei einem
+  // einzelnen Rechteck genau oben → rechts → unten → links wie bei der Skizze). Überlappen sich Teile mit gleicher Kante, zählt der Abschnitt einmal;
+  // gerade Fortsetzungen werden eine Wand. mx,my = Punkt auf der Innenseite (bei einem Rechteck seine Mitte) – für „nur Innenseiten zeigen“.
+  const schl=(x,y)=>Math.round(x*100)+','+Math.round(y*100);
+  const umrissVon=teile=>{
+    const eigen=[];
+    for(const k of kanten){if(!teile.includes(k.raum))continue;
+      const h=k.y1===k.y2,c=h?k.y1:k.x1,a=h?k.x1:k.y1,b=h?k.x2:k.y2,dir=Math.sign(b-a),tiefe=h?k.raum.h/2:k.raum.w/2;
+      const schon=eigen.filter(e=>e.h===h&&e.dir===dir&&Math.abs(e.c-c)<=EPS).map(e=>[e.lo,e.hi]);
+      for(const [lo,hi] of ohne(Math.min(a,b),Math.max(a,b),schon))eigen.push({h,c,dir,lo,hi,tiefe});}
+    const frei=new Set(eigen.map(e=>{const a=e.dir>0?e.lo:e.hi,b=e.dir>0?e.hi:e.lo;return e.h?{x1:a,y1:e.c,x2:b,y2:e.c,h:true,tiefe:e.tiefe}:{x1:e.c,y1:a,x2:e.c,y2:b,h:false,tiefe:e.tiefe};})),zuege=[];
+    while(frei.size){let start=null;for(const k of frei)if(!start||k.y1<start.y1-EPS||(Math.abs(k.y1-start.y1)<=EPS&&k.x1<start.x1))start=k;
+      let k=start,z=null;
+      while(k){frei.delete(k);
+        if(z&&z.h===k.h&&Math.sign(z.x2-z.x1)===Math.sign(k.x2-k.x1)&&Math.sign(z.y2-z.y1)===Math.sign(k.y2-k.y1)){z.x2=k.x2;z.y2=k.y2;z.tiefe=Math.min(z.tiefe,k.tiefe);}
+        else{z={...k};zuege.push(z);}
+        const ende=schl(k.x2,k.y2);k=null;for(const n of frei)if(schl(n.x1,n.y1)===ende){k=n;break;}}}
+    return zuege.map(z=>{const l=Math.hypot(z.x2-z.x1,z.y2-z.y1)||1,nx=-(z.y2-z.y1)/l,ny=(z.x2-z.x1)/l;   // innen = rechts der Laufrichtung
+      return {x1:z.x1,y1:z.y1,x2:z.x2,y2:z.y2,mx:(z.x1+z.x2)/2+nx*z.tiefe,my:(z.y1+z.y2)/2+ny*z.tiefe};});};
+  const raeume=[...gruppen.values()].map(({m,teile})=>{const x0=Math.min(...teile.map(r=>r.x)),y0=Math.min(...teile.map(r=>r.y)),x1=Math.max(...teile.map(r=>r.x+r.w)),y1=Math.max(...teile.map(r=>r.y+r.h));
+    return {x:x0,y:y0,w:x1-x0,h:y1-y0,name:String(m.name??'').trim(),fire:m.fire===true,teile:teile.map(r=>({x:r.x,y:r.y,w:r.w,h:r.h})),umriss:umrissVon(teile)};});
+  return {skizze:stuecke.length||raeume.length?{stuecke,brand:raeume.filter(r=>r.fire).map(({umriss,fire,...r})=>r),raeume:raeume.map(({fire,...r})=>r),schematic:false,art:'nachzeichnung',
+    geprueft:{date:c.date,by:c.by.trim()}}:null};
+}
+/** Wandstücke in Weltkoordinaten, in kurze Stücke geteilt – so lassen sie sich mit den Proben richtig nach Tiefe sortieren.
+    Nachzeichnung: Brandraum und Räume tragen ihre Rechtecke (teile) und den Umriss mit (verbundene Räume). Skizze: ein Rechteck je Raum wie bisher. */
 function waendeInWelt(g){
   const w=(x,y)=>({x:(x/g.plan.width-.5)*g.pw,y:(y/g.plan.height-.5)*g.ph}),out=[],MAXL=.45;
   for(const s of g.skizze.stuecke){const a=w(s.x1,s.y1),b=w(s.x2,s.y2),len=Math.hypot(b.x-a.x,b.y-a.y),n=Math.max(1,Math.ceil(len/MAXL));
     const nx=(b.y-a.y)/(len||1),ny=-(b.x-a.x)/(len||1),licht=.55+.45*Math.abs(nx*.6-ny*.8);   // feste Lichtrichtung → Wände unterschiedlich hell
     for(let i=0;i<n;i++)out.push({x1:a.x+(b.x-a.x)*i/n,y1:a.y+(b.y-a.y)*i/n,x2:a.x+(b.x-a.x)*(i+1)/n,y2:a.y+(b.y-a.y)*(i+1)/n,art:s.art,brand:s.brand,anfang:i===0,ende:i===n-1,licht});}
-  return {stuecke:out,brand:g.skizze.brand.map(r=>({a:w(r.x,r.y),b:w(r.x+r.w,r.y+r.h)})),raeume:g.skizze.raeume.map(r=>({name:r.name,a:w(r.x,r.y),b:w(r.x+r.w,r.y+r.h)}))};
+  const rechteck=r=>({a:w(r.x,r.y),b:w(r.x+r.w,r.y+r.h)});
+  return {stuecke:out,brand:g.skizze.brand.map(r=>({...rechteck(r),...(r.teile?{teile:r.teile.map(rechteck)}:{})})),
+    raeume:g.skizze.raeume.map(r=>({name:r.name,...rechteck(r),...(r.umriss?{umriss:r.umriss.map(s=>{const a=w(s.x1,s.y1),b=w(s.x2,s.y2),m=w(s.mx,s.my);return {x1:a.x,y1:a.y,x2:b.x,y2:b.y,mx:m.x,my:m.y};})}:{})}))};
 }
 
 /* ================= Zustand ================= */
@@ -816,7 +922,9 @@ async function geschossBauen(name,plan,markers){
   }catch{/* Bild nicht lesbar → nur Papieransicht */}
   const mpu=plan.calibration&&plan.calibration.units>0&&plan.calibration.meters>0?plan.calibration.meters/plan.calibration.units:null;
   const ms=(Array.isArray(markers)?markers:[]).filter(x=>x&&Number.isFinite(x.x)&&Number.isFinite(x.y)).map(x=>({...x,label:String(x.label??''),kind:x.kind==='fire'?'fire':'sample'}));
-  return {name,plan,papier,glas,mpu,marker:ms,sichtbar:true,pw:0,ph:0,deck:1,skizze:skizzeLesen(plan)};
+  // Ein Plan hat Skizze ODER Nachzeichnung. Mit Nachzeichnung: Wände nur, wenn sie geprüft ist und im Plan liegt – sonst flach mit einer Zeile Hinweis.
+  const nz=nachzeichnungLesen(plan);
+  return {name,plan,papier,glas,mpu,marker:ms,sichtbar:true,pw:0,ph:0,deck:1,skizze:nz?nz.skizze||null:skizzeLesen(plan),hinweis:nz&&nz.hinweis||''};
 }
 async function projektLaden(p,name,demo=false,quelle={art:demo?'beispiel':'datei',dir:null,name}){
   if(!p||p.format!=='probenplan'||!p.plan)throw Error('Das ist keine PlanKit-Datei (*.probenplan).');
@@ -850,6 +958,8 @@ function seiteFuellen(){
   const gEl=$('geschosse');gEl.textContent='';
   [...S.geschosse].reverse().forEach(g=>{const l=document.createElement('label');l.className='zeile';const c=document.createElement('input');c.type='checkbox';c.checked=g.sichtbar;c.onchange=()=>{g.sichtbar=c.checked;};
     const t=document.createElement('span');t.textContent=g.name;const n=document.createElement('span');n.className='n';n.textContent=g.marker.filter(m=>m.kind==='sample').length;l.append(c,t,n);gEl.append(l);});
+  // Nachzeichnung ohne Wände (ungeprüft, nicht im Plan, ungültig): eine ruhige Zeile je Geschoss
+  [...S.geschosse].reverse().filter(g=>g.hinweis).forEach(g=>{const k=document.createElement('div');k.className='klein nz-hinweis';k.textContent=(S.geschosse.length>1?g.name+': ':'')+g.hinweis;gEl.append(k);});
   const proben=S.geschosse.flatMap(g=>g.marker.filter(m=>m.kind==='sample'));
   const aEl=$('arten');aEl.textContent='';const arten=new Map();for(const m of proben){const t=typVon(m)||'ohne Angabe';arten.set(t,(arten.get(t)||0)+1);}
   const zeichen={circle:'●',square:'■',diamond:'◆'};
@@ -863,7 +973,7 @@ function seiteFuellen(){
     const z=document.createElement('div');z.className='zeile';const f=document.createElement('span');f.className='farbe';f.style.background=g.farbe;const s=document.createElement('span');s.textContent=g.stufe;const n=document.createElement('span');n.className='n';n.textContent=g.n;z.append(f,s,n);lEl.append(z);}
   if(!proben.length){const k=document.createElement('div');k.className='klein';k.textContent='In diesem Plan sind noch keine Proben gesetzt.';lEl.append(k);}
   const brand=S.geschosse.some(g=>g.marker.some(m=>m.kind==='fire'));$('rauch').style.display=brand?'':'none';
-  $('waende').style.display=S.geschosse.some(g=>g.waende)?'':'none';   // nur bei Plänen mit Skizze
+  $('waende').style.display=S.geschosse.some(g=>g.waende)?'':'none';   // nur bei Plänen mit Skizze oder geprüfter Nachzeichnung
 }
 
 /* ---------- Dateien ---------- */
@@ -1200,9 +1310,9 @@ function wandStueck(w,z,hoch,al,jetzt){
 function brandraumBoden(g,z,jetzt,al){
   if(!g.waende||!g.waende.brand.length||al<=.01)return;const f=flackern(jetzt);
   cx.save();cx.globalCompositeOperation='lighter';
-  for(const r of g.waende.brand){const mx=(r.a.x+r.b.x)/2,my=(r.a.y+r.b.y)/2,c=proj(mx,my,z+.005),E=[proj(r.a.x,r.a.y,z),proj(r.b.x,r.a.y,z),proj(r.b.x,r.b.y,z),proj(r.a.x,r.b.y,z)];
-    const rad=Math.max(...E.map(p=>Math.hypot(p.x-c.x,p.y-c.y)));
-    cx.beginPath();E.forEach((p,j)=>j?cx.lineTo(p.x,p.y):cx.moveTo(p.x,p.y));cx.closePath();
+  for(const r of g.waende.brand){const mx=(r.a.x+r.b.x)/2,my=(r.a.y+r.b.y)/2,c=proj(mx,my,z+.005),T=(r.teile||[r]).map(t=>[proj(t.a.x,t.a.y,z),proj(t.b.x,t.a.y,z),proj(t.b.x,t.b.y,z),proj(t.a.x,t.b.y,z)]);
+    const rad=Math.max(...T.flat().map(p=>Math.hypot(p.x-c.x,p.y-c.y)));
+    cx.beginPath();for(const E of T){E.forEach((p,j)=>j?cx.lineTo(p.x,p.y):cx.moveTo(p.x,p.y));cx.closePath();}   // verbundener Raum: alle Rechtecke in EINEM Pfad → Fläche einmal gefüllt
     const gr=cx.createRadialGradient(c.x,c.y,0,c.x,c.y,rad);gr.addColorStop(0,`rgba(255,150,60,${.34*al*f})`);gr.addColorStop(.7,`rgba(255,110,40,${.14*al*f})`);gr.addColorStop(1,`rgba(255,90,30,${.05*al})`);
     cx.fillStyle=gr;cx.fill();}
   cx.restore();
@@ -1285,7 +1395,9 @@ function wandModell(w,z,hoch,al){
 /** Brandraum: nur ein weicher warmer Ton auf dem Boden, kein Leuchten. Kennzeichnung aus PlanKit, kein Messwert. */
 function brandraumModell(g,z,al){
   if(!g.waende||!g.waende.brand.length||al<=.01)return;
-  for(const r of g.waende.brand){viereckPfad([proj(r.a.x,r.a.y,z),proj(r.b.x,r.a.y,z),proj(r.b.x,r.b.y,z),proj(r.a.x,r.b.y,z)]);cx.fillStyle=`rgba(226,140,80,${.14*al})`;cx.fill();}
+  for(const r of g.waende.brand){cx.beginPath();
+    for(const t of r.teile||[r]){const E=[proj(t.a.x,t.a.y,z),proj(t.b.x,t.a.y,z),proj(t.b.x,t.b.y,z),proj(t.a.x,t.b.y,z)];E.forEach((p,j)=>j?cx.lineTo(p.x,p.y):cx.moveTo(p.x,p.y));cx.closePath();}   // verbundener Raum: ein Pfad
+    cx.fillStyle=`rgba(226,140,80,${.14*al})`;cx.fill();}
 }
 function formPfad(f,x,y,r){cx.beginPath();
   if(f==='square')cx.rect(x-r*.9,y-r*.9,r*1.8,r*1.8);
@@ -1348,8 +1460,9 @@ function brandModell(m,g,z,jetzt){
 /* ================= Wischfelder (1.5.0): die Probe als farbiges Feld auf der Fläche, von der gewischt wurde =================
    Aufsicht → Feld liegt auf dem Boden · Ansicht → Feld steht an der Wand · Untersicht → Feld hängt unter der Decke.
    Gefärbt ist NUR das Feld der Probe (Farbe = Bewertung wie bisher, Form = Probenart wie in PlanKit); dazwischen wird nichts eingefärbt.
-   Die Größe des Felds ist ein Zeichen, keine Flächenangabe. Ansicht-Proben richten sich nach der nächsten Wand der Skizze (höchstens
-   1 m entfernt); ohne Skizze oder ohne Wand in der Nähe steht das Feld zum Betrachter gedreht – die Wandrichtung ist dann nicht bekannt.
+   Die Größe des Felds ist ein Zeichen, keine Flächenangabe. Ansicht-Proben richten sich nach der nächsten Wand der Skizze bzw. geprüften
+   Nachzeichnung (höchstens 1 m entfernt; Nachzeichnung auf einem nicht kalibrierten Plan: höchstens NZ_ANSICHT der längeren Planseite – eine
+   Darstellungstoleranz, kein Messwert); ohne Wände oder ohne Wand in der Nähe steht das Feld zum Betrachter gedreht – die Wandrichtung ist dann nicht bekannt.
    Proben ohne Oberflächenart bleiben die Kugel am gestrichelten Stiel. */
 const FELD_FORM={circle:Array.from({length:22},(_,i)=>[Math.cos(i*Math.PI/11),Math.sin(i*Math.PI/11)]),square:[[-.9,-.9],[.9,-.9],[.9,.9],[-.9,.9]],diamond:[[0,-1.15],[1.05,0],[0,1.15],[-1.05,0]]};
 function feldGeo(m,g,z){
@@ -1359,7 +1472,8 @@ function feldGeo(m,g,z){
   // Untersicht: in Glas unter der Decke. Im Modell ist das Geschoss auf Wandhöhe geschnitten (die Decke fehlt) → das Feld schwebt auf halber Geschosshöhe, sonst läge es fast immer unter der Platte darüber.
   if(art==='ceiling')return {c:[w.x,w.y,z+hs*(mod?.5:.95)],u:[h,0,0],v:[0,h,0],stiel:true,art};
   let best=null;
-  if(g.waende){const lim=100/g.plan.width*g.pw;
+  // Wie weit darf die Wand weg sein? Skizze: 1 m (100 cm). Nachzeichnung: 1 m, wenn der Plan kalibriert ist, sonst NZ_ANSICHT der längeren Planseite.
+  if(g.waende){const lim=(g.skizze.art==='nachzeichnung'?(g.mpu?1/g.mpu:NZ_ANSICHT*Math.max(g.plan.width,g.plan.height)):100)/g.plan.width*g.pw;
     for(const s of g.waende.stuecke){if(s.art==='tuer')continue;const dx=s.x2-s.x1,dy=s.y2-s.y1,l2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((w.x-s.x1)*dx+(w.y-s.y1)*dy)/l2)),fx=s.x1+t*dx,fy=s.y1+t*dy,d=Math.hypot(w.x-fx,w.y-fy);
       if(d<=lim&&(!best||d<best.d)){const l=Math.sqrt(l2);best={d,fx,fy,dx:dx/l,dy:dy/l};}}}
   if(best){const nx=-best.dy,ny=best.dx,seite=((w.x-best.fx)*nx+(w.y-best.fy)*ny)<0?-1:1;
@@ -1395,11 +1509,13 @@ function feldZeichnen(m,g,z,jetzt,ein){
 }
 
 /* ================= Fotowände (1.5.0): die Fotos eines Raums hängen an seinen Wänden =================
-   Zuordnung nur über FotoKits „Raum / Abschnitt“ = Raumname der PlanKit-Skizze (ohne Groß-/Kleinschreibung; auch „<Geschoss> <Raum>“).
+   Zuordnung nur über FotoKits „Raum / Abschnitt“ = Raumname der PlanKit-Skizze bzw. geprüften Nachzeichnung (ohne Groß-/Kleinschreibung; auch „<Geschoss> <Raum>“).
+   Ein verbundener Raum der Nachzeichnung (joins) ist EIN Raum: seine Fotos hängen rundum an seinem Außenumriss. Gleichnamige, nicht verbundene Räume sind
+   mehrdeutig – dann wird nicht geraten.
    Gibt es den Raumnamen in mehreren Geschossen und nennt FotoKit kein Geschoss, wird NICHT geraten – das Foto bleibt weg.
    Reihenfolge wie in FotoKit, gleichmäßig im Uhrzeigersinn um den Raum verteilt. An WELCHER Wand ein Foto hängt, ist nicht belegt
    (FotoKit kennt keine Blickrichtung) – so steht es auch am Knopf. Gezeigt werden nur die Wände, auf deren Innenseite man gerade schaut.
-   Nur Pläne mit Skizze haben Räume; PDF-/Bildpläne bekommen keine Fotowände. Höchstens 8 Fotos je Raum, klein eingelesen. */
+   Räume haben nur Pläne mit Skizze oder geprüfter Nachzeichnung; andere PDF-/Bildpläne bekommen keine Fotowände. Höchstens 8 Fotos je Raum, klein eingelesen. */
 const WAND_PX=420,WAND_MAX=8;
 const normRaum=t=>String(t||'').normalize('NFC').toLowerCase().replace(/\s+/g,' ').trim();
 function fotoWaendeBauen(){
@@ -1411,11 +1527,12 @@ function fotoWaendeBauen(){
     if(ziel.length!==1){S.fotoWand.ohne+=liste.length;continue;}
     const {g,r}=ziel[0],n=Math.min(WAND_MAX,liste.length),wahl=Array.from({length:n},(_,i)=>liste[n===1?0:Math.round(i*(liste.length-1)/(n-1))]);
     const [ax,ay,bx,by]=[r.a.x,r.a.y,r.b.x,r.b.y],mx=(ax+bx)/2,my=(ay+by)/2;
-    const W4=[[ax,ay,bx,ay],[bx,ay,bx,by],[bx,by,ax,by],[ax,by,ax,ay]].map(([x1,y1,x2,y2])=>({x1,y1,x2,y2,l:Math.hypot(x2-x1,y2-y1),n:0}));
+    // Skizze: die vier Kanten des Rechtecks. Nachzeichnung: der Umriss des Raums (bei verbundenen Räumen die Außenkanten aller Teile), je Kante mit eigenem Innenpunkt.
+    const W4=(r.umriss||[[ax,ay,bx,ay],[bx,ay,bx,by],[bx,by,ax,by],[ax,by,ax,ay]].map(([x1,y1,x2,y2])=>({x1,y1,x2,y2,mx,my}))).map(s=>({...s,l:Math.hypot(s.x2-s.x1,s.y2-s.y1),n:0}));
     const P=W4.reduce((s,w)=>s+w.l,0);let rest=n;for(const w of W4){w.n=Math.floor(n*w.l/P);rest-=w.n;}
     [...W4].sort((p,q)=>(n*q.l/P-q.n)-(n*p.l/P-p.n)).slice(0,rest).forEach(w=>w.n++);
-    let i=0;for(const w of W4)for(let j=0;j<w.n;j++){const t=(j+.5)/w.n,dx=(w.x2-w.x1)/w.l,dy=(w.y2-w.y1)/w.l,x=w.x1+(w.x2-w.x1)*t,y=w.y1+(w.y2-w.y1)*t,l=Math.hypot(mx-x,my-y)||1;
-      g.fotoW.push({f:wahl[i++],liste,raum:r.name,x:x+(mx-x)/l*.05,y:y+(my-y)/l*.05,dx,dy,slot:w.l/w.n,mx,my});S.fotoWand.fotos++;}
+    let i=0;for(const w of W4)for(let j=0;j<w.n;j++){const t=(j+.5)/w.n,dx=(w.x2-w.x1)/w.l,dy=(w.y2-w.y1)/w.l,x=w.x1+(w.x2-w.x1)*t,y=w.y1+(w.y2-w.y1)*t,l=Math.hypot(w.mx-x,w.my-y)||1;
+      g.fotoW.push({f:wahl[i++],liste,raum:r.name,x:x+(w.mx-x)/l*.05,y:y+(w.my-y)/l*.05,dx,dy,slot:w.l/w.n,mx:w.mx,my:w.my});S.fotoWand.fotos++;}
   }
   const kn=$('fotoW'),da=S.fotoWand.fotos>0;kn.style.display=da?'':'none';if(!da)S.fotoAn=false;else if(S.demo)S.fotoAn=true;druck(kn,S.fotoAn);
   kn.textContent=da?`Fotowände (${S.fotoWand.fotos})`:'Fotowände';
@@ -1617,24 +1734,70 @@ function beispiel(){
   const C=(x,y,raum,surface,v)=>({id:id(),kind:'sample',label:'P'+nr,note:'',x,y,lx:x,ly:y,raum,surface,typ:'Chlorid',shape:'square',lab:{ref:'',desc:`${raum}, ${SURFACE_NAMES[surface]}`,art:'Chlorid · Wischprobe',labNr:'BEISPIEL-'+nr,bericht:'BEISPIEL-02',werte:[{p:'Chlorid (Cl)',r:de(v),u:'µg/cm²'}]}});
   const A=(x,y,raum,text)=>({id:id(),kind:'sample',label:'P'+nr,note:'',x,y,lx:x,ly:y,raum,surface:'floor',typ:'Asbest',shape:'diamond',lab:{ref:'',desc:`${raum}, Bodenbelag`,art:'Asbest · Materialprobe',labNr:'BEISPIEL-'+nr,bericht:'BEISPIEL-03',werte:[{p:'Asbest',r:text,u:''}]}});
   const eg=[[40,40,560,360,'Küche',1],[600,40,560,360,'Wohnzimmer'],[40,400,560,360,'Flur'],[600,400,560,360,'Bad / HWR']];
-  const og=[[40,40,560,360,'Schlafzimmer'],[600,40,560,360,'Kinderzimmer'],[40,400,560,360,'Flur OG'],[600,400,560,360,'Büro']];
   const dg=[[40,40,1120,360,'Dachboden'],[40,400,560,360,'Abstellraum'],[600,400,560,360,'Treppe']];
-  // EG und 1. OG als Skizze wie in PlanKit (cm, 12 × 8 m, Küche = Brandraum) → mit Glaswänden; DG als einfaches Bild → flache Platte.
+  // EG als Skizze wie in PlanKit (cm, 12 × 8 m, Küche = Brandraum) → mit Wänden. 1. OG als Bildplan (PNG wie ein eingelesener Plan) mit geprüfter
+  // Nachzeichnung (1.6.0) → mit Wänden; der Flur ist L-förmig aus zwei verbundenen Rechtecken. DG als einfaches Bild → flache Platte.
   const raum=(id,[x,y,w,h,name,fire])=>({id,name,x,y,w,h,...(fire?{fire:true}:{})});
   const tuer=(id,x,y,a,w=90,side=1)=>({id,kind:'door',x,y,a,w,side}),fenster=(id,x,y,a,w=120)=>({id,kind:'window',x,y,a,w,side:1});
   const skizze=(raeume,openings,walls=[],texts=[])=>({width:1200,height:800,rooms:raeume.map((r,i)=>raum('r'+i,r)),walls,openings,texts});
   const skEG=skizze(eg,[tuer('t1',375,400,0),tuer('t2',805,400,0,90,-1),tuer('t3',600,195,90),tuer('t4',600,605,90),tuer('t5',320,760,0,100),
     fenster('f1',320,40,0,140),fenster('f2',40,220,90),fenster('f3',880,40,0,160),fenster('f4',1160,220,90,140),fenster('f5',1160,600,90,100),fenster('f6',40,580,90,100)]);
-  const skOG=skizze(og,[tuer('t1',375,400,0),tuer('t2',805,400,0,90,-1),tuer('t3',600,605,90),
-    fenster('f1',320,40,0,140),fenster('f2',880,40,0,140),fenster('f3',1160,220,90,120),fenster('f4',40,220,90),fenster('f5',1160,600,90,100)],
-    [{id:'w1',x1:300,y1:600,x2:300,y2:760}],[{id:'x1',x:170,y:690,text:'Treppe',size:30}]);
   const plan=(name,r,sk)=>sk?{name,width:1200,height:800,data:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(skizzeSVG(sk)),vector:true,sketch:sk,calibration:{units:100,meters:1}}
     :{name,width:1200,height:800,data:svg(r,tueren),vector:true,calibration:{units:100,meters:1}};
+  const og=beispielOG(),u=og.u;
   const m0=[{id:'brand1',kind:'fire',label:'B1',note:'',x:170,y:150,lx:170,ly:150,raum:'Küche'},P(300,120,'Küche','ceiling',480),P(480,300,'Küche','wall',210),C(140,320,'Küche','wall',14),P(820,160,'Wohnzimmer','ceiling',95),P(1040,300,'Wohnzimmer','floor',22),C(700,330,'Wohnzimmer','wall',7),P(300,560,'Flur','ceiling',130),A(480,680,'Flur','Chrysotil nachgewiesen'),P(900,600,'Bad / HWR','wall',9),C(1060,700,'Bad / HWR','floor',2)];
-  const m1=[P(300,160,'Schlafzimmer','ceiling',60),P(480,320,'Schlafzimmer','floor',14),P(860,200,'Kinderzimmer','ceiling',18),P(320,580,'Flur OG','ceiling',75),C(160,700,'Flur OG','wall',4),P(900,600,'Büro','wall',6),A(1040,700,'Büro','nicht nachgewiesen')];
+  // 1. OG: Proben in Planeinheiten des Bildplans (u = cm → Bildpunkt). P15 liegt im angebauten Flurteil dicht an der verbundenen Kante (dort keine Wand),
+  // P16 dicht an der Außenwand des Büros.
+  const m1=[P(...u(300,160),'Schlafzimmer','ceiling',60),P(...u(480,320),'Schlafzimmer','floor',14),P(...u(860,200),'Kinderzimmer','ceiling',18),P(...u(220,620),'Flur OG','ceiling',75),
+    C(...u(430,470),'Flur OG','wall',4),P(...u(1130,520),'Büro','wall',6),A(...u(900,680),'Büro','nicht nachgewiesen')];
   const m2=[P(400,200,'Dachboden','ceiling',12),P(900,180,'Dachboden','floor',null),P(300,600,'Abstellraum','wall',4)];
-  return {format:'probenplan',version:5,plan:plan('EG',eg,skEG),markers:m0,nextSample:nr+1,nextFire:2,report:'',date:'2026-11-12',active:0,results:{usage:'residential',parameter:'*',scales:{}},
-    sheets:[{id:'s0',name:'EG'},{id:'s1',name:'1. OG',plan:plan('1. OG',og,skOG),markers:m1},{id:'s2',name:'DG',plan:plan('DG',dg),markers:m2}]};
+  return {format:'probenplan',version:7,plan:plan('EG',eg,skEG),markers:m0,nextSample:nr+1,nextFire:2,report:'',date:'2026-11-12',active:0,results:{usage:'residential',parameter:'*',scales:{}},
+    sheets:[{id:'s0',name:'EG'},{id:'s1',name:'1. OG',plan:og.plan,markers:m1},{id:'s2',name:'DG',plan:plan('DG',dg),markers:m2}]};
+}
+
+/** 1. OG des Beispielgebäudes: ein gezeichneter Bildplan (PNG, 1500 × 1000 Bildpunkte, 1,15 Bildpunkte je cm – wie ein eingelesener Architektenplan
+    mit Rand und Schriftfeld) und darüber die Nachzeichnung im PlanKit-Format (plan.trace, Planeinheiten = Bildpunkte, geprüft). Wände des Bildes
+    und Linien der Nachzeichnung liegen auf derselben Mittellinie. Alles frei erfunden. */
+function beispielOG(){
+  const S_=1.15,OX=60,OY=40,r2=v=>Math.round(v*100)/100,X=x=>r2(OX+x*S_),Y=y=>r2(OY+y*S_),u=(x,y)=>[X(x),Y(y)],B=1500,Hh=1000;
+  // Nachzeichnung (cm → Planeinheiten): r3 gehört ausdrücklich zu r2 (L-förmiger Flur) – die Kante zwischen beiden ist keine Wand.
+  const R=[['r0',40,40,560,360,'Schlafzimmer'],['r1',600,40,560,360,'Kinderzimmer'],['r2',40,400,360,360,'Flur OG'],['r3',400,400,360,160,'Flur OG','r2'],['r4',400,560,360,200,'Bad OG'],['r5',760,400,400,360,'Büro']];
+  const rooms=R.map(([id,x,y,w,h,name,joins])=>({id,name,x:X(x),y:Y(y),w:r2(w*S_),h:r2(h*S_),...(joins?{joins}:{})}));
+  const walls=[{id:'w1',x1:X(1060),y1:Y(760),x2:X(1160),y2:Y(660)}];   // schräge Schachtwand im Büro
+  const O=[['d1','door',250,400,0,90,1],['d2','door',690,400,0,90,-1],['d3','door',600,560,0,80,1],['d4','door',760,480,90,90,1],['d5','door',150,760,0,100,1],
+    ['f1','window',320,40,0,140],['f2','window',880,40,0,160],['f3','window',1160,220,90,120],['f4','window',40,220,90,120],['f5','window',1160,540,90,100],['f6','window',580,760,0,80]];
+  const openings=O.map(([id,kind,x,y,a,w,side])=>({id,kind,x:X(x),y:Y(y),a,w:r2(w*S_),side:side||1}));
+  // Bildplan zeichnen (Canvas 2D, synchron): schwarze Wände mittig auf den Linien, Türen mit Aufschlag, Fenster, Möbel, Treppe, Schriftfeld
+  const c=document.createElement('canvas');c.width=B;c.height=Hh;const g=c.getContext('2d');
+  g.fillStyle='#fff';g.fillRect(0,0,B,Hh);g.strokeStyle='#9a9a9a';g.lineWidth=1.5;g.strokeRect(14,14,B-28,Hh-28);
+  const wand=(x1,y1,x2,y2,d)=>{g.strokeStyle='#161616';g.lineWidth=d*S_;g.lineCap='square';g.beginPath();g.moveTo(X(x1),Y(y1));g.lineTo(X(x2),Y(y2));g.stroke();};
+  // Möbel und Treppe (grau, fein) zuerst – die Wände liegen darüber
+  g.strokeStyle='#8c8c8c';g.lineWidth=1.4;g.lineCap='butt';
+  const rect=(x,y,w,h)=>g.strokeRect(X(x),Y(y),w*S_,h*S_);
+  rect(90,110,200,180);rect(90,110,200,40);rect(470,90,90,60);rect(1000,90,140,90);rect(640,90,200,70);rect(820,640,180,80);rect(1040,440,100,160);rect(440,600,170,80);rect(680,700,60,45);
+  for(let i=0;i<9;i++){g.beginPath();g.moveTo(X(70),Y(570+i*20));g.lineTo(X(210),Y(570+i*20));g.stroke();}rect(70,570,140,180);
+  g.beginPath();g.moveTo(X(140),Y(740));g.lineTo(X(140),Y(585));g.lineTo(X(130),Y(605));g.moveTo(X(140),Y(585));g.lineTo(X(150),Y(605));g.stroke();
+  for(const [a,b,dd] of [[[40,40],[1160,40],30],[[1160,40],[1160,760],30],[[1160,760],[40,760],30],[[40,760],[40,40],30],[[600,40],[600,400],14],[[40,400],[1160,400],14],
+    [[400,560],[400,760],14],[[400,560],[760,560],14],[[760,400],[760,760],14],[[1060,760],[1160,660],14]])wand(a[0],a[1],b[0],b[1],dd);
+  // Schacht schraffieren
+  g.save();g.beginPath();g.moveTo(X(1060),Y(760));g.lineTo(X(1160),Y(660));g.lineTo(X(1160),Y(760));g.closePath();g.clip();g.strokeStyle='#555';g.lineWidth=1.2;
+  for(let i=-120;i<140;i+=14){g.beginPath();g.moveTo(X(1040+i),Y(780));g.lineTo(X(1160+i),Y(660));g.stroke();}g.restore();
+  // Öffnungen: Lücke in die Wand, Tür mit Blatt und Viertelkreis, Fenster mit drei feinen Linien
+  for(const [,kind,x,y,a,w,side] of O){const h=w/2*S_,d=(x===40||x===1160||y===40||y===760?30:14)*S_;
+    g.save();g.translate(X(x),Y(y));g.rotate(a*Math.PI/180);g.fillStyle='#fff';g.fillRect(-h,-d/2-1,2*h,d+2);
+    if(kind==='door'){const s=side||1;g.strokeStyle='#3a3a3a';g.lineWidth=1.6;g.beginPath();g.moveTo(-h,0);g.lineTo(-h,s*2*h);g.stroke();
+      g.lineWidth=1;g.beginPath();g.arc(-h,0,2*h,s>0?0:-Math.PI/2,s>0?Math.PI/2:0);g.stroke();}
+    else{g.strokeStyle='#161616';g.lineWidth=1.3;for(const k of [-d/2,0,d/2]){g.beginPath();g.moveTo(-h,k);g.lineTo(h,k);g.stroke();}g.beginPath();g.moveTo(-h,-d/2);g.lineTo(-h,d/2);g.moveTo(h,-d/2);g.lineTo(h,d/2);g.stroke();}
+    g.restore();}
+  // Raumnamen (ohne Flächen) und Schriftfeld
+  g.fillStyle='#262626';g.textAlign='center';g.textBaseline='middle';g.font='600 26px Arial, Helvetica, sans-serif';
+  for(const [n,x,y] of [['Schlafzimmer',380,250],['Kinderzimmer',900,250],['Flur',300,470],['Bad',580,640],['Büro',920,560]])g.fillText(n,X(x),Y(y));
+  g.font='16px Arial, Helvetica, sans-serif';g.fillStyle='#555';g.fillText('Treppe',X(140),Y(762)+22);
+  g.strokeStyle='#262626';g.lineWidth=1.5;g.strokeRect(B-430,Hh-96,404,70);g.textAlign='left';g.fillStyle='#262626';g.font='600 18px Arial, Helvetica, sans-serif';
+  g.fillText('Grundriss 1. Obergeschoss',B-416,Hh-74);g.font='14px Arial, Helvetica, sans-serif';g.fillStyle='#555';g.fillText('BEISPIEL – frei erfunden · Bildplan mit Nachzeichnung',B-416,Hh-46);
+  const plan={name:'1. OG (Bildplan)',width:B,height:Hh,data:c.toDataURL('image/png'),vector:false,calibration:{units:115,meters:1},
+    trace:{rooms,walls,openings,checked:{date:'2026-11-12',by:'Bsp'}}};
+  return {plan,u};
 }
 
 /** SVG einer Skizze – verkürzt nach PlanKit (src/sketch.ts, sketchSVG), nur für das Beispielgebäude. */

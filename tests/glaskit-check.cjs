@@ -1,7 +1,9 @@
-// GlasKit – Prüfung im echten Browser mit erfundenen Daten (keine Kundendaten): node tests/glaskit-check.cjs [a|b|c|d|alle]
+// GlasKit – Prüfung im echten Browser mit erfundenen Daten (keine Kundendaten): node tests/glaskit-check.cjs [a|b|c|d|e|f|alle]
 // Braucht Playwright (z. B. NODE_PATH auf ein node_modules mit „playwright“). Legt im privaten Dateisystem des Browsers (OPFS)
 // einen Archivordner mit erfundenen Projekten an, merkt ihn wie die Projektzentrale in IndexedDB „mosaik-suite“ und öffnet
 // GlasKit mit #projekt=… . Bildschirmfotos landen in tests/out/.
+// e = Nachzeichnung (1.6.0, Vorlage tests/nachzeichnung-vorlage.json aus PlanKits eigenem Code), f = Skizzen-Pläne wie 1.5.0 (braucht 1.5.0 im Git).
+// Mit PLANKIT=<Pfad zum PlanKit-Repo> prüft e zusätzlich die Nachzeichnung des Beispielgebäudes mit PlanKits validateTrace/traceSegments.
 const assert=require('node:assert/strict'),fs=require('node:fs'),http=require('node:http'),path=require('node:path'),{chromium}=require('playwright');
 const root=path.join(__dirname,'..'),out=path.join(__dirname,'out');fs.mkdirSync(out,{recursive:true});
 const welche=process.argv[2]||'alle',soll=x=>welche==='alle'||welche===x;
@@ -74,7 +76,7 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     console.log('A ok');
   }
   if(soll('b')){
-    // Beispielgebäude: EG und 1. OG sind Skizzen → Glaswände, DG ist ein Bild → flach
+    // Beispielgebäude: EG ist eine Skizze, 1. OG ein Bildplan mit geprüfter Nachzeichnung (1.6.0) → Wände; DG ist ein Bild → flach
     await page.goto(url);await page.waitForFunction(()=>typeof S!=='undefined'&&S.geschosse.length===3);await page.locator('#sBeispiel').click();
     const info=await page.evaluate(()=>S.geschosse.map(g=>({n:g.name,w:g.waende?g.waende.stuecke.length:0,b:g.waende?g.waende.brand.length:0,arten:g.skizze?[...new Set(g.skizze.stuecke.map(s=>s.art))].sort():[]})));
     assert.deepEqual(info.map(x=>x.n),['EG','1. OG','DG']);
@@ -94,8 +96,8 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     await page.evaluate(()=>{karteZu();S.kam={yaw:-2.4,pitch:.38,zoom:1.5,tx:-1.5,ty:-1,tz:1.6};S.ziel=null;});await page.waitForTimeout(500);await shot('b3-flacher-blick');
     await page.locator('#waende').click();assert.equal(await page.locator('#waende').getAttribute('aria-pressed'),'false');await shot('b4-ohne-waende');
     await page.locator('#waende').click();
-    // Plan ohne Skizze (nur Bild) → keine Wände, kein Schalter
-    await page.evaluate(async()=>{const p=beispiel();for(const x of [p.plan,...p.sheets.map(s=>s.plan).filter(Boolean)])delete x.sketch;await projektLaden(p,'Ohne Skizze');});
+    // Plan ohne Skizze und ohne Nachzeichnung (nur Bild) → keine Wände, kein Schalter
+    await page.evaluate(async()=>{const p=beispiel();for(const x of [p.plan,...p.sheets.map(s=>s.plan).filter(Boolean)]){delete x.sketch;delete x.trace;}await projektLaden(p,'Ohne Skizze');});
     assert.equal(await page.evaluate(()=>S.geschosse.every(g=>!g.waende)),true);assert.equal(await page.locator('#waende').isVisible(),false);
     // Skizze passt nicht zur Plangröße → lieber flach
     assert.equal(await page.evaluate(()=>{const p=beispiel();p.plan.width=999;return skizzeLesen(p.plan);}),null);
@@ -248,6 +250,161 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     assert.equal(await p3.evaluate(()=>S.stil),'modell');await p3.locator('#sBeispiel').click();await p3.locator('#glas').click();assert.equal(await p3.evaluate(()=>S.stil),'glas');
     await p3.close();
     console.log('D ok');
+  }
+  if(soll('e')){
+    // --- 1.6.0: Nachzeichnung (plan.trace) – Vorlage aus PlanKits eigenem Code (tests/nachzeichnung-vorlage.mjs, PlanKit-Version steht darin) ---
+    const V=JSON.parse(fs.readFileSync(path.join(__dirname,'nachzeichnung-vorlage.json'),'utf8'));
+    console.log(`Vorlage aus PlanKit ${V.plankit.version} (${V.plankit.commit})`);
+    await page.goto(url);await page.waitForFunction(()=>typeof S!=='undefined'&&S.geschosse.length===3);
+    // 1) Testprojekt, je Variante ein Geschoss (gerade · gedreht · gedreht+zugeschnitten · fein ausgerichtet · kalibriert). Der Bildplan wird hier gezeichnet:
+    //    PlanKits Wandliste über die Umkehrung von PlanKits planMatrix ins ORIGINAL (also so schief/gedreht, wie ein echtes Original wäre), Türen/Fenster als Lücken.
+    //    GlasKit zeichnet das Original wie immer über seine eigene Vorbereitung – liegen seine Wände danach auf den dunklen Linien, passt alles zusammen.
+    const r1=await page.evaluate(async V=>{
+      const inv=m=>{const d=m[0]*m[3]-m[1]*m[2];return [m[3]/d,-m[1]/d,-m[2]/d,m[0]/d,(m[2]*m[5]-m[3]*m[4])/d,(m[1]*m[4]-m[0]*m[5])/d];},ap=(m,p)=>({x:m[0]*p.x+m[2]*p.y+m[4],y:m[1]*p.x+m[3]*p.y+m[5]});
+      const bildplan=v=>{const c=document.createElement('canvas');c.width=v.quelle.width;c.height=v.quelle.height;const g=c.getContext('2d'),mi=inv(v.matrix);g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);
+        const strich=(a,b)=>{const p=ap(mi,a),q=ap(mi,b);g.beginPath();g.moveTo(p.x,p.y);g.lineTo(q.x,q.y);g.stroke();};
+        g.strokeStyle='#111';g.lineWidth=8;g.lineCap='square';for(const s of v.segmente)strich({x:s.x1,y:s.y1},{x:s.x2,y:s.y2});
+        g.strokeStyle='#fff';g.lineWidth=14;g.lineCap='butt';for(const o of v.plan.trace.openings){const r=o.a*Math.PI/180,dx=Math.cos(r)*o.w/2,dy=Math.sin(r)*o.w/2;strich({x:o.x-dx,y:o.y-dy},{x:o.x+dx,y:o.y+dy});}
+        return c.toDataURL('image/png');};
+      const sheets=V.varianten.map((v,i)=>({id:'s'+i,name:v.name,plan:{...v.plan,data:bildplan(v)},markers:v.markers}));
+      await projektLaden({format:'probenplan',version:7,plan:sheets[0].plan,markers:sheets[0].markers,nextSample:9,nextFire:1,report:'',date:'2026-11-13',active:0,sheets:sheets.map((s,i)=>i?s:{id:s.id,name:s.name})},'Testprojekt Nachzeichnung');
+      document.getElementById('start').classList.add('weg');
+      const abst=(p,s)=>{const dx=s.x2-s.x1,dy=s.y2-s.y1,l2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((p.x-s.x1)*dx+(p.y-s.y1)*dy)/l2));return Math.hypot(p.x-s.x1-t*dx,p.y-s.y1-t*dy);};
+      const punkte=(s,n)=>Array.from({length:n},(_,i)=>{const t=.02+.96*i/(n-1);return {x:s.x1+(s.x2-s.x1)*t,y:s.y1+(s.y2-s.y1)*t};});
+      const gemeinsam=(A,B)=>{const e=.01;if(Math.abs(A.y+A.h-B.y)<e||Math.abs(B.y+B.h-A.y)<e){const y=Math.abs(A.y+A.h-B.y)<e?B.y:A.y;return {x1:Math.max(A.x,B.x),y1:y,x2:Math.min(A.x+A.w,B.x+B.w),y2:y};}
+        const x=Math.abs(A.x+A.w-B.x)<e?B.x:A.x;return {x1:x,y1:Math.max(A.y,B.y),x2:x,y2:Math.min(A.y+A.h,B.y+B.h)};};
+      return V.varianten.map((v,i)=>{const g=S.geschosse[i],st=g.skizze?g.skizze.stuecke:[],k=g.papier.width/g.plan.width,ctx=g.papier.getContext('2d');
+        const hell=p=>{const d=ctx.getImageData(Math.round(p.x*k)-1,Math.round(p.y*k)-1,3,3).data;let m=255;for(let j=0;j<d.length;j+=4)m=Math.min(m,(d[j]+d[j+1]+d[j+2])/3);return m;};
+        const mitte=s=>({x:(s.x1+s.x2)/2,y:(s.y1+s.y2)/2}),R=Object.fromEntries(v.plan.trace.rooms.map(r=>[r.id,r]));
+        const kanteV=gemeinsam(R.wo,R.wo2),kanteB=gemeinsam(R.b1,R.b2),welt2plan=c=>({x:(c[0]/g.pw+.5)*g.plan.width,y:(c[1]/g.ph+.5)*g.plan.height});
+        const felder=Object.fromEntries(g.marker.map(m=>{const G=feldGeo(m,g,0),soll=v.naechste[m.label];if(!G)return [m.label,'kein Feld'];
+          if(!soll)return [m.label,G.wand?'an einer Wand, soll frei stehen':G.stiel?'ok':'frei ohne Stiel'];
+          if(!G.wand)return [m.label,'frei, soll an der Wand stehen'];
+          const c=welt2plan(G.c),d=abst(c,soll),dx=soll.x2-soll.x1,dy=soll.y2-soll.y1,seite=p=>Math.sign(dx*(p.y-soll.y1)-dy*(p.x-soll.x1));
+          const quer=Math.abs(G.u[0]*dy-G.u[1]*dx)/Math.hypot(G.u[0],G.u[1])/Math.hypot(dx,dy);
+          return [m.label,d<=.06*g.plan.width/g.pw&&seite(m)!==0&&seite(c)===seite(m)&&quer<1e-6?'ok':`falsch: Abstand ${d.toFixed(2)}, Seite ${seite(c)}/${seite(m)}, quer ${quer}`];}));
+        return {name:v.name,hinweis:g.hinweis,art:g.skizze&&g.skizze.art,waende:!!g.waende,arten:[...new Set(st.map(s=>s.art))].sort(),
+          fehltGK:v.segmente.flatMap(s=>punkte(s,24).filter(p=>!st.some(w=>abst(p,w)<=.05))).length,       // PlanKit-Wand ohne GlasKit-Wand
+          fehltPK:st.flatMap(s=>punkte(s,8).filter(p=>!v.segmente.some(w=>abst(p,w)<=.05))).length,          // GlasKit-Wand, die PlanKit nicht hat
+          dunkelMax:Math.max(...st.filter(s=>s.art==='wand').map(s=>hell(mitte(s)))),offenMin:Math.min(...st.filter(s=>s.art!=='wand').map(s=>hell(mitte(s)))),
+          aufVerbunden:st.filter(s=>punkte(kanteV,10).some(p=>abst(p,s)<1)).length,aufBuero:punkte(kanteB,10).filter(p=>!st.some(s=>abst(p,s)<=.05)).length,felder,
+          raeume:g.skizze.raeume.map(r=>r.name+'/'+r.teile.length+'/'+r.umriss.length).sort(),brand:g.waende.brand.map(b=>b.teile.length),brandStuecke:st.filter(s=>s.brand).length,mpu:g.mpu};});
+    },V);
+    for(const r of r1){const t=r.name+': ';
+      assert.equal(r.hinweis,'',t+'kein Hinweis');assert.equal(r.art,'nachzeichnung',t);assert.ok(r.waende,t+'Wände');assert.deepEqual(r.arten,['fenster','tuer','wand'],t);
+      assert.equal(r.fehltGK,0,t+'jede Wand aus PlanKits Wandliste steht');assert.equal(r.fehltPK,0,t+'keine Wand, die PlanKit nicht hat');
+      assert.ok(r.dunkelMax<100,t+'jedes Wandstück liegt auf einer Wandlinie des Bildplans: '+r.dunkelMax);assert.ok(r.offenMin>200,t+'Türen/Fenster liegen auf den Lücken: '+r.offenMin);
+      assert.equal(r.aufVerbunden,0,t+'verbundene Kante ist keine Wand');assert.equal(r.aufBuero,0,t+'gleichnamige, nicht verbundene Räume behalten ihre Wand');
+      assert.deepEqual(r.raeume,['Büro/1/4','Büro/1/4','Küche/1/4','Wohnen/2/6'],t+'Räume nur über joins zusammengelegt');assert.deepEqual(r.brand,[1],t);assert.ok(r.brandStuecke>0,t);
+      for(const [l,f] of Object.entries(r.felder))assert.equal(f,'ok',t+l);}
+    assert.deepEqual(r1.map(r=>r.mpu),[null,null,null,null,.01],'nur die letzte Variante ist kalibriert');
+    assert.equal(await page.locator('#waende').isVisible(),true);
+    console.log('Nachzeichnung: 5 Varianten – Wände wie PlanKit, auf den Linien des Bildplans, Felder an der richtigen Wand und Seite');
+    await page.evaluate(()=>{S.dreh=false;S.kam={yaw:-.62,pitch:.5,zoom:.62,tx:0,ty:0,tz:mitteZ()};S.ziel=null;});await page.waitForTimeout(4500);await shot('f1-testprojekt-nachzeichnung');
+    // 2) Fotowände auf einer Nachzeichnung: verbundener Raum = ein Raum, Fotos rundum am Außenumriss; gleichnamige Räume → nicht raten
+    const r2=await page.evaluate(()=>{
+      const foto=t=>{const c=document.createElement('canvas');c.width=160;c.height=120;const x=c.getContext('2d');x.fillStyle='#567';x.fillRect(0,0,160,120);x.fillStyle='#fff';x.font='16px sans-serif';x.fillText(t,8,60);return c;};
+      const liste=(n,raum)=>Array.from({length:n},(_,i)=>({name:`T_${raum}_${i+1}.jpg`,text:raum,abschnitt:raum,probe:'',drehung:0,canvas:foto(raum+' '+(i+1))}));
+      S.fotos={status:'ok',map:new Map(),raum:new Map([['gerade wohnen',liste(6,'Wohnen')],['gerade büro',liste(2,'Büro')],['gerade küche',liste(3,'Küche')],['zugeschnitten wohnen',liste(4,'Wohnen')]]),dir:null,pfad:'',fehler:'',anzahl:0};
+      fotoWaendeBauen();
+      const abst=(p,s)=>{const dx=s.x2-s.x1,dy=s.y2-s.y1,l2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((p.x-s.x1)*dx+(p.y-s.y1)*dy)/l2));return Math.hypot(p.x-s.x1-t*dx,p.y-s.y1-t*dy);};
+      const pruefe=i=>{const g=S.geschosse[i],r=g.skizze.raeume.find(x=>x.name==='Wohnen'),plan=(x,y)=>({x:(x/g.pw+.5)*g.plan.width,y:(y/g.ph+.5)*g.plan.height}),f=g.plan.width/g.pw;
+        const R=Object.fromEntries(g.plan.trace.rooms.map(x=>[x.id,x])),A=R.wo,B=R.wo2;
+        const innen=p=>r.teile.some(t=>p.x>=t.x&&p.x<=t.x+t.w&&p.y>=t.y&&p.y<=t.y+t.h)&&r.umriss.every(s=>abst(p,s)>.01*f);   // in der Vereinigung, nicht auf dem Umriss
+        const tafeln=g.fotoW.filter(p=>p.raum==='Wohnen');
+        return {n:tafeln.length,amUmriss:tafeln.every(p=>r.umriss.some(s=>abst(plan(p.x,p.y),s)<=.06*f)),innen:tafeln.every(p=>innen(plan(p.mx,p.my))&&innen(plan(p.x,p.y))),
+          // die verbundene Kante gehört nicht zum Umriss
+          umrissOhneKante:!r.umriss.some(s=>{const e=.01,mid={x:(s.x1+s.x2)/2,y:(s.y1+s.y2)/2};return (Math.abs(mid.y-B.y)<e&&mid.x>B.x&&mid.x<B.x+B.w&&Math.abs(A.y+A.h-B.y)<e)||(Math.abs(mid.x-B.x)<e&&mid.y>B.y&&mid.y<B.y+B.h&&Math.abs(A.x+A.w-B.x)<e);}),
+          buero:g.fotoW.filter(p=>p.raum==='Büro').length,kueche:g.fotoW.filter(p=>p.raum==='Küche').length};};
+      return {fw:S.fotoWand,gerade:pruefe(0),zugeschnitten:pruefe(2),knopf:getComputedStyle(document.getElementById('fotoW')).display};});
+    assert.deepEqual(r2.fw,{fotos:13,ohne:2},'Wohnen 6 + 4, Küche 3; „Büro“ zweimal im Geschoss → nicht raten');
+    for(const k of ['gerade','zugeschnitten']){const x=r2[k];assert.ok(x.amUmriss&&x.innen&&x.umrissOhneKante,k+': '+JSON.stringify(x));}
+    assert.equal(r2.gerade.n,6);assert.equal(r2.zugeschnitten.n,4);assert.equal(r2.gerade.buero,0);assert.equal(r2.gerade.kueche,3);assert.notEqual(r2.knopf,'none');
+    await page.evaluate(()=>{S.fotoAn=true;S.geschosse.forEach((g,i)=>{g.sichtbar=i===0;});S.kam={yaw:-.9,pitch:.62,zoom:1.25,tx:0,ty:0,tz:H()*.3};S.ziel=null;});await page.waitForTimeout(800);await shot('f2-fotowaende-verbundener-raum');
+    // 3) Abwandlungen: Wände nur, wenn PlanKit die Nachzeichnung annähme UND sie geprüft ist
+    const r3=await page.evaluate(V=>{const basis=Object.fromEntries(V.abwandlungen.filter(a=>a.trace).map(a=>[a.name,a]));
+      const aus=V.abwandlungen.map(a=>{const tr=a.trace||{...basis[a.basis].trace,walls:[...basis[a.basis].trace.walls,a.dazuWand]},r=nachzeichnungLesen({width:a.width,height:a.height,trace:tr});
+        return {name:a.name,plankit:a.plankit,glaskit:r.skizze?'Wände':r.hinweis};});
+      const g=V.varianten[0].plan,beides=nachzeichnungLesen({...g,sketch:{width:g.width,height:g.height,rooms:[],walls:[],openings:[],texts:[]}});
+      return {aus,beides:beides.hinweis,keine:nachzeichnungLesen({width:10,height:10})};},V);
+    const soll={'ungeprüft':'Nachzeichnung noch nicht geprüft – in PlanKit bestätigen','Kette':'Nachzeichnung ist ungültig – bleibt flach','Selbstbezug':'Nachzeichnung ist ungültig – bleibt flach',
+      'außerhalb':'Nachzeichnung liegt nicht ganz im Plan – bleibt flach','Wand außerhalb':'Nachzeichnung liegt nicht ganz im Plan – bleibt flach','Obergrenze':'Wände','1001 Wände':'Nachzeichnung ist ungültig – bleibt flach'};
+    for(const a of r3.aus){assert.equal(a.glaskit,soll[a.name],a.name);assert.equal(a.glaskit==='Wände',a.plankit==='gültig'&&a.name!=='ungeprüft',a.name+': GlasKit und PlanKit einig');}
+    assert.equal(r3.beides,'Skizze und Nachzeichnung zugleich – bleibt flach');assert.equal(r3.keine,null);
+    // 4) Ungeprüft im Projekt: flache Platte, eine ruhige Zeile, kein Schalter „Wände“
+    await page.evaluate(async V=>{const v=V.varianten[0],tr={...v.plan.trace};delete tr.checked;const c=document.createElement('canvas');c.width=16;c.height=10;
+      await projektLaden({format:'probenplan',version:7,plan:{...v.plan,trace:tr,data:c.toDataURL()},markers:v.markers,nextSample:9,nextFire:1,report:'',date:''},'Ungeprüft');},V);
+    assert.deepEqual(await page.evaluate(()=>S.geschosse.map(g=>[!!g.waende,g.hinweis])),[[false,'Nachzeichnung noch nicht geprüft – in PlanKit bestätigen']]);
+    assert.deepEqual(await page.locator('#geschosse .nz-hinweis').allTextContents(),['Nachzeichnung noch nicht geprüft – in PlanKit bestätigen']);
+    assert.equal(await page.locator('#waende').isVisible(),false);
+    assert.equal(await page.evaluate(()=>S.geschosse[0].marker.filter(m=>feldGeo(m,S.geschosse[0],0).wand).length),0,'ungeprüft: kein Feld an einer Wand');
+    await page.waitForTimeout(3000);await shot('f3-ungeprueft-flach');
+    // 5) Obergrenze: 200 Räume, 1 000 Wände, 400 Türen/Fenster – Zeit für ein Bild (Software-Canvas wie über RDP)
+    const zeit=await page.evaluate(async V=>{const a=V.abwandlungen.find(x=>x.name==='Obergrenze'),c=document.createElement('canvas');c.width=400;c.height=200;
+      await projektLaden({format:'probenplan',version:7,plan:{name:'gross',width:a.width,height:a.height,data:c.toDataURL(),vector:false,trace:a.trace},markers:[],nextSample:1,nextFire:1,report:'',date:''},'Obergrenze');
+      S.t0=-1e6;const g=S.geschosse[0],ms={};for(const stil of ['modell','glas']){stilSetzen(stil,false);bild(performance.now());const t=performance.now();for(let i=0;i<10;i++){bild(performance.now());cx.getImageData(0,0,1,1);}ms[stil]=(performance.now()-t)/10;}
+      stilSetzen('modell',false);return {ms,stuecke:g.waende.stuecke.length,roh:g.skizze.stuecke.length};},V);
+    console.log(`Obergrenze (1 000 Wände): ${zeit.roh} Wandstücke, ${zeit.stuecke} Teilstücke · Bild im Modell ${zeit.ms.modell.toFixed(1)} ms, Glas ${zeit.ms.glas.toFixed(1)} ms`);
+    assert.ok(zeit.roh>=1000);
+    // 6) Beispielgebäude: 1. OG = Bildplan (PNG) mit geprüfter Nachzeichnung; L-förmiger Flur aus zwei verbundenen Rechtecken
+    await page.goto(url);await page.waitForFunction(()=>typeof S!=='undefined'&&S.geschosse.length===3);await page.locator('#sBeispiel').click();
+    const r6=await page.evaluate(()=>{const g=S.geschosse[1],sk=g.skizze,flur=sk.raeume.find(r=>r.name==='Flur OG'),X=x=>60+x*1.15,Y=y=>40+y*1.15;
+      const aufKante=sk.stuecke.filter(s=>Math.abs(s.x1-X(400))<.5&&Math.abs(s.x2-X(400))<.5&&Math.min(s.y1,s.y2)<Y(560)-1&&Math.max(s.y1,s.y2)>Y(400)+1).length;
+      const plan=c=>({x:(c[0]/g.pw+.5)*g.plan.width,y:(c[1]/g.ph+.5)*g.plan.height}),G=l=>{const G=feldGeo(g.marker.find(m=>m.label===l),g,0);return G.wand?plan(G.c):null;};
+      // Modell: der Bildplan liegt auch mit Wänden auf der Platte (drawImage mit dem Planbild des 1. OG)
+      stilSetzen('modell',false);const bilder=[],d=cx.drawImage;cx.drawImage=function(b,...r){bilder.push(b);return d.call(this,b,...r);};try{S.t0=-1e6;bild(performance.now());}finally{cx.drawImage=d;}
+      return {namen:S.geschosse.map(g=>g.name+':'+(g.skizze?g.skizze.art||'skizze':'-')),png:!g.plan.vector&&/^data:image\/png;base64,/.test(g.plan.data),geprueft:sk.geprueft,
+        flur:flur.teile.length+'/'+flur.umriss.length,aufKante,p15:G('P15'),p16:G('P16'),fotosFlur:g.fotoW.filter(p=>p.raum==='Flur OG').length,planAufPlatte:bilder.includes(g.papier)&&g.waende.stuecke.length>0,
+        kanten:{x400:X(400),y400:Y(400),x1160:X(1160)},versatz:.06*g.plan.width/g.pw};});   // Feld steht 0,04 Welteinheiten vor der Wand
+    assert.deepEqual(r6.namen,['EG:skizze','1. OG:nachzeichnung','DG:-'],'Skizze, Nachzeichnung und reines Bild nebeneinander');
+    assert.ok(r6.png);assert.deepEqual(r6.geprueft,{date:'2026-11-12',by:'Bsp'});assert.equal(r6.flur,'2/6');assert.equal(r6.aufKante,0,'zwischen den verbundenen Flurteilen keine Wand');
+    assert.ok(r6.p15&&Math.abs(r6.p15.y-r6.kanten.y400)<r6.versatz&&r6.p15.y>r6.kanten.y400,'P15 an der oberen Flurwand (nicht an der verbundenen Kante), raumseitig: '+JSON.stringify(r6.p15));
+    assert.ok(r6.p16&&Math.abs(r6.p16.x-r6.kanten.x1160)<r6.versatz&&r6.p16.x<r6.kanten.x1160,'P16 an der Außenwand des Büros, raumseitig: '+JSON.stringify(r6.p16));
+    assert.equal(r6.fotosFlur,3);assert.ok(r6.planAufPlatte,'Modell: Planbild bleibt unter den Wänden auf der Platte');
+    if(process.env.PLANKIT){   // zusätzlich: Nachzeichnung des Beispielgebäudes mit PlanKits eigenem Code prüfen
+      const T=await import(require('node:url').pathToFileURL(path.join(process.env.PLANKIT,'src','trace.ts')).href);
+      const og=await page.evaluate(()=>{const p=S.geschosse[1].plan;return {trace:p.trace,width:p.width,height:p.height,st:S.geschosse[1].skizze.stuecke};});
+      T.validateTrace(og.trace,og);const segs=T.traceSegments(og.trace);
+      const abst=(p,s)=>{const dx=s.x2-s.x1,dy=s.y2-s.y1,l2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((p.x-s.x1)*dx+(p.y-s.y1)*dy)/l2));return Math.hypot(p.x-s.x1-t*dx,p.y-s.y1-t*dy);};
+      const pkt=(s,n)=>Array.from({length:n},(_,i)=>{const t=.02+.96*i/(n-1);return {x:s.x1+(s.x2-s.x1)*t,y:s.y1+(s.y2-s.y1)*t};});
+      assert.equal(segs.flatMap(s=>pkt(s,24).filter(p=>!og.st.some(w=>abst(p,w)<=.05))).length,0,'Beispiel: jede PlanKit-Wand steht');
+      assert.equal(og.st.flatMap(s=>pkt(s,8).filter(p=>!segs.some(w=>abst(p,w)<=.05))).length,0,'Beispiel: keine Wand, die PlanKit nicht hat');
+      console.log('Beispielgebäude: Nachzeichnung von PlanKit ('+process.env.PLANKIT+') angenommen, Wände wie traceSegments');
+    }
+    // Bildschirmfotos: Beispielgebäude, dann nur das nachgezeichnete 1. OG in allen drei Darstellungen
+    await page.evaluate(()=>{S.dreh=false;fliege(ganz(),.01);});await page.waitForTimeout(4500);await shot('f4-beispiel-modell');
+    for(const stil of ['modell','glas','papier']){await page.locator('#'+stil).click();
+      await page.evaluate(()=>{S.geschosse.forEach((g,i)=>{g.sichtbar=i===1;});S.kam={yaw:-.7,pitch:MODELL()?.62:.66,zoom:1.3,tx:0,ty:0,tz:H()*1.15};S.ziel=null;});
+      await page.waitForTimeout(900);await shot('f5-1og-nachzeichnung-'+stil);}
+    await page.locator('#modell').click();
+    console.log('E ok');
+  }
+  if(soll('f')){
+    // Skizzen-Pläne müssen genau wie in 1.5.0 aussehen: 1.5.0 aus Git neben 1.6.0 laden, dasselbe Projekt (Beispielgebäude von 1.5.0: EG und 1. OG
+    // als Skizze, DG als Bild), gleiche Kamera, feste Zeit – Daten (Wände, Räume, Fotowände, Felder) und Pixel in allen drei Darstellungen vergleichen.
+    let alt=null;try{alt=require('node:child_process').execSync('git show f04ec0a:index.html',{cwd:root,maxBuffer:1e8,stdio:['ignore','pipe','ignore']}).toString();}catch{/* nicht im Git */}
+    if(!alt)console.log('F übersprungen: GlasKit 1.5.0 (f04ec0a) ist in diesem Git nicht vorhanden');
+    else{
+      fs.writeFileSync(path.join(out,'glaskit-1.5.0.html'),alt);
+      const pa=await ctx.newPage();pa.on('pageerror',e=>fehler.push('1.5.0: '+e.message));
+      await pa.goto(url.replace(/index\.html$/,'tests/out/glaskit-1.5.0.html'));await pa.waitForFunction(()=>typeof S!=='undefined'&&S.geschosse.length===3);
+      assert.equal(await pa.locator('#version').textContent(),'v1.5.0');
+      const projekt=await pa.evaluate(()=>JSON.stringify(beispiel()));
+      await page.goto(url);await page.waitForFunction(()=>typeof S!=='undefined'&&S.geschosse.length===3);
+      for(const pg of [pa,page])await pg.evaluate(async j=>{await projektLaden(JSON.parse(j),'Vergleich mit 1.5.0',true);document.getElementById('start').classList.add('weg');S.dreh=false;},projekt);
+      const daten=pg=>pg.evaluate(()=>{stilSetzen('modell',false);S.kam={yaw:-.75,pitch:.5,zoom:.9,tx:0,ty:0,tz:mitteZ()};S.ziel=null;
+        return JSON.stringify(S.geschosse.map(g=>({skizze:g.skizze,waende:g.waende,fotoW:g.fotoW.map(p=>({...p,f:p.f.name,liste:p.liste.length})),felder:g.marker.map(m=>feldGeo(m,g,0))})));});
+      const [da,db]=[await daten(pa),await daten(page)];
+      assert.ok(JSON.parse(db)[0].waende.stuecke.length>20&&JSON.parse(db)[1].waende.stuecke.length>20);
+      assert.equal(db,da,'Skizzen-Pläne: Wände, Räume, Brandraum, Fotowände und Felder genau wie 1.5.0');
+      const bildVon=(pg,stil)=>pg.evaluate(stil=>{stilSetzen(stil,false);S.dreh=false;S.ziel=null;S.wahl=null;S.hover=null;S.fotoAn=true;S.waende=true;S.artAus.clear();
+        S.kam={yaw:-.75,pitch:MODELL()?.5:.56,zoom:.9,tx:0,ty:0,tz:mitteZ()};const T=5e6;S.t0=T-1e6;for(let i=0;i<2;i++){S.teilchen=[];bild(T);}return cv.toDataURL('image/png');},stil);
+      for(const stil of ['modell','glas','papier']){const a=await bildVon(pa,stil),b=await bildVon(page,stil);
+        if(a!==b){fs.writeFileSync(path.join(out,`g-${stil}-1.5.0.png`),Buffer.from(a.split(',')[1],'base64'));fs.writeFileSync(path.join(out,`g-${stil}-1.6.0.png`),Buffer.from(b.split(',')[1],'base64'));}
+        assert.ok(a===b,`${stil}: Bild mit Skizzen-Plänen pixelgleich mit 1.5.0 (sonst tests/out/g-${stil}-*.png)`);}
+      await pa.close();
+      console.log('F ok (Skizzen-Pläne pixelgleich mit 1.5.0 in Modell, Glas, Papier)');
+    }
   }
   assert.deepEqual(fehler,[]);
   await browser.close();server.close();console.log('OK',welche);

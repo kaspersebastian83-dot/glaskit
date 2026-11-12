@@ -6,7 +6,7 @@ GlasKit liest eine PlanKit-Datei (`*.probenplan`) **nur lesend** und zeigt die G
 
 ![Vorschau](docs/vorschau.png)
 
-Aktuelle Version: **1.4.0** (steht oben neben dem Namen).
+Aktuelle Version: **1.6.0** (steht oben neben dem Namen).
 
 ## Benutzen
 
@@ -18,9 +18,9 @@ Oder `index.html` in Edge oder Chrome öffnen (oder über GitHub Pages) → „P
 - **Darstellung** unten: **Modell · Glas · Papier**. „Modell“ (Standard) ist ein helles Architekturmodell aus weißem Karton: Platten mit Dicke und weichem Schatten, der Plan als feine Bleistiftlinien, Wände als Karton auf gut ⅓ Geschosshöhe (wie ein Schnittmodell), Proben als flache Marken mit weißem Ring; die ganze Seite wird hell. „Glas“ und „Papier“ sind unverändert wie bis 1.3.0. Die Wahl merkt sich der Browser.
 - Im Modell sind Platten und Wände undurchsichtig. Damit dabei keine Probe verschwindet, stehen die Geschosse weiter auseinander (1,35 × – „Abstand“ wirkt zusätzlich), die Kamera blickt flacher, und eine verdeckte Probe (unter dem Geschoss darüber oder hinter einer Wand) erscheint als **gestrichelter Umriss** in ihrer Farbe. Klick darauf = wie bei jeder Probe: die Geschosse darüber blassen aus, die Wände des Geschosses werden durchscheinend.
 - Klick auf eine Probe: Karte mit dem Wert wie im Prüfbericht, Geschosse darüber werden durchsichtig
-- **Wände** (nur bei Plänen, die in PlanKit als Skizze gezeichnet sind): in „Glas“/„Papier“ Wände als Glas bis knapp unter das nächste Geschoss, Türen offen (mit Sturz), Fenster mit Brüstung und Glasscheibe, der Brandraum vom Boden her warm angeleuchtet. Schalter „Wände“ unten. PDF- und Bildpläne bleiben flache Platten.
+- **Wände** (bei Plänen, die in PlanKit als Skizze gezeichnet sind, und – ab 1.6.0 – bei PDF-/Bildplänen mit einer in PlanKit **geprüften Nachzeichnung**): in „Glas“/„Papier“ Wände als Glas bis knapp unter das nächste Geschoss, Türen offen (mit Sturz), Fenster mit Brüstung und Glasscheibe, der Brandraum vom Boden her warm angeleuchtet. Schalter „Wände“ unten. Ist die Nachzeichnung noch nicht geprüft, bleibt der Plan flach und im Seitenfeld steht eine Zeile: „Nachzeichnung noch nicht geprüft – in PlanKit bestätigen“. Pläne ohne Skizze und ohne Nachzeichnung bleiben flache Platten.
 - **Wischfelder** (ab 1.5.0): Jede Probe mit Oberflächenart ist ein farbiges Feld auf der Fläche, von der gewischt wurde – auf dem Boden (Aufsicht), stehend an der Wand (Ansicht), schwebend/unter der Decke (Untersicht). Proben ohne Oberflächenart bleiben die Kugel am gestrichelten Stiel.
-- **Fotowände** (ab 1.5.0, nur Pläne mit Skizze, Projekt als Ordner geöffnet): Knopf „Fotowände (n)“ hängt die FotoKit-Fotos eines Raums an seine Wände. Klick auf ein Foto öffnet die Großansicht mit allen Fotos des Raums.
+- **Fotowände** (ab 1.5.0, Pläne mit Skizze oder geprüfter Nachzeichnung, Projekt als Ordner geöffnet): Knopf „Fotowände (n)“ hängt die FotoKit-Fotos eines Raums an seine Wände. Klick auf ein Foto öffnet die Großansicht mit allen Fotos des Raums.
 - **Fotos aus FotoKit** in der Probenkarte (nur wenn das Projekt als Ordner geöffnet ist): großes Bild mit FotoKits Beschreibung, darunter alle Fotos der Probe; Klick = Großansicht (Pfeiltasten, Esc). Aussortierte Fotos fehlen, Drehung wie in FotoKit, HEIC-Fotos bekommen einen ruhigen Hinweis. Proben mit Fotos tragen ein kleines Kamera-Zeichen.
 - „Rundgang“: Kamerafahrt von Probe zu Probe, das Foto erscheint mit der Karte (Leertaste = Pause, Pfeiltasten, Esc)
 - „Bild speichern“: PNG der aktuellen Ansicht als Download, in der Darstellung, die gerade zu sehen ist (Fußzeile im Modell hell mit dunkler Schrift)
@@ -36,6 +36,20 @@ Oder `index.html` in Edge oder Chrome öffnen (oder über GitHub Pages) → „P
 ## Wände aus der Skizze
 
 `plan.sketch` (PlanKit `src/sketch.ts`, cm): Raumrechtecke und freie Wände; gemeinsame Kanten benachbarter Räume werden zu einer Wand zusammengelegt, Türen/Fenster schneiden sie (gleiche Lage-Regel wie PlanKit: parallel, auf der Linie). Höhen als Anteil des Geschossabstands (Wand 0,94 · Sturz 0,72 · Brüstung 0,30), daher passen Proben (Decke 0,9) immer unter die Wandkrone. Wände und Proben werden gemeinsam von hinten nach vorn gezeichnet (Wände dafür in Stücke ≤ 0,45 Welteinheiten geteilt). Passt die Skizze nicht zur Plangröße oder ist der Plan gedreht/zugeschnitten, bleibt er flach.
+
+## Wände aus der Nachzeichnung (1.6.0)
+
+`plan.trace` (PlanKit ab 2.3.0/2.4.0, `src/trace.ts`, Projektformat 7): Raumrechtecke `{id,name,x,y,w,h,fire?,joins?}`, freie Wände (auch schräg), Türen/Fenster `{kind,x,y,a,w,side}`, `checked:{date,by}`. Ein Plan hat Skizze **oder** Nachzeichnung; beides zugleich bleibt flach.
+
+- **Nur geprüft.** Ohne `checked` keine Wände, keine Fotowände, keine wandbündigen Felder – flache Platte wie bisher und die eine Zeile im Seitenfeld. Nichts wird geraten: keine Wände aus einer ungeprüften Nachzeichnung, keine Räume, wo keine nachgezeichnet sind.
+- **Koordinaten = Planeinheiten des vorbereiteten Plans**, dieselben wie die Probenpunkte. PlanKit hat Drehen, Zuschneiden (und ein Ausrichten vor dem Nachzeichnen) schon mitgenommen – darum keine Größengleichheit, keine Ablehnung wegen `plan.preparation`. Geprüft wird nur: alles liegt im Plan (wie PlanKit auf 0,01 genau), Aufbau und `joins` wie PlanKits `validateTrace`, höchstens 200 Räume, **1 000 Wände**, 400 Türen/Fenster. Sonst flach mit „… liegt nicht ganz im Plan“ bzw. „… ist ungültig“.
+- **Keine Zentimeter.** Die festen Werte der Skizze werden Anteile der längeren Planseite: gleiche Linie/Kanten zusammenlegen 0,05 %, kürzeste Wand 0,1 %, Tür/Fenster auf der Wand 0,2 %, kürzestes Stück 0,05 %, Brandraum-Rand 0,1 %. Zusammengelegte Kanten bleiben, wo sie gezeichnet sind (Mittel der Kanten, keine Rundung). Der Skizzen-Weg (`skizzeLesen`) ist unverändert – Prüfung f vergleicht ihn pixelgenau mit 1.5.0.
+- **Räume nur über `joins`.** Ausdrücklich verbundene Rechtecke sind ein Raum: die gemeinsame Kante ist keine Wand (gleiche Regel wie PlanKits `traceSegments`), Brandraum und Fotowände gelten für die ganze Fläche. Gleichnamige, **nicht** verbundene Rechtecke bleiben getrennte Räume mit Wand dazwischen; für Fotowände ist ihr Name mehrdeutig – es wird nicht geraten.
+- **Fotowände:** wie bei der Skizze über FotoKits „Raum / Abschnitt“. Ein verbundener Raum hängt seine Fotos rundum an seinen Außenumriss (im Uhrzeigersinn ab oben links, gerade Fortsetzungen sind eine Wand).
+- **Wischfelder „Ansicht“:** nächste Wand bis 1 m, wenn der Plan kalibriert ist; sonst bis **2,5 % der längeren Planseite** (derselbe Anteil, den PlanKit als Standardbreite einer Tür setzt – also etwa eine Türbreite). Das ist eine Darstellungstoleranz, kein Messwert. Längen oder Flächen werden nirgends gezeigt.
+- **Türen und Fenster** haben kein Maß; sie werden in der Breite gezeichnet, die PlanKit gespeichert hat.
+- **Modell:** der Bildplan bleibt als Bleistift auf der Platte unter den Kartonwänden.
+- **Beispielgebäude:** EG Skizze · 1. OG Bildplan (PNG, 1500 × 1000 Bildpunkte, kalibriert) mit geprüfter Nachzeichnung und L-förmigem Flur aus zwei verbundenen Rechtecken · DG reines Bild.
 
 ## Darstellung „Modell“ (1.4.0)
 
@@ -63,4 +77,7 @@ Die Bewertungsregeln (VdS-2357-Referenzen, KORROSION-CHLORID v2, Asbest-Befund, 
 
 ## Prüfen
 
-`tests/glaskit-check.cjs` (Playwright, erfundene Daten, Bildschirmfotos nach `tests/out/`): `node tests/glaskit-check.cjs a|b|c|d|alle` (d = Darstellungen: je eine Prüfung für Modell, Glas, Papier, gewählte Probe im Modell, „Bild speichern“, gesperrter Speicher). Kein Testgerüst, keine CI.
+`tests/glaskit-check.cjs` (Playwright, erfundene Daten, Bildschirmfotos nach `tests/out/`): `node tests/glaskit-check.cjs a|b|c|d|e|f|alle` (d = Darstellungen: je eine Prüfung für Modell, Glas, Papier, gewählte Probe im Modell, „Bild speichern“, gesperrter Speicher). Kein Testgerüst, keine CI.
+
+- **e – Nachzeichnung (1.6.0).** Vorlage `tests/nachzeichnung-vorlage.json`, erzeugt mit PlanKits eigenem Code (`node tests/nachzeichnung-vorlage.mjs <Pfad zu Probenplan>`: `joinTraceRoom`, `traceOpeningOn`, `rotateProject`, `cropProject`, `alignProject`, `validateTrace`, `traceSegments`). Ein Grundriss gerade · um 90° gedreht · gedreht und zugeschnitten · fein ausgerichtet · kalibriert: Wände wie PlanKits Wandliste und auf den Linien des Bildplans, verbundene Kante ohne Wand, gleichnamige Nachbarn mit Wand, Ansicht-Felder an PlanKits nächster Wand auf der Seite der Probe (kalibriert 1 m, sonst 2,5 %), Fotowände am Außenumriss, Abwandlungen mit PlanKits Urteil (ungeprüft, Kette, Selbstbezug, außerhalb, 1 000/1 001 Wände), ungeprüft flach mit Zeile, Zeit für ein Bild mit 1 000 Wänden, Beispielgebäude, Bildschirmfotos des nachgezeichneten 1. OG in allen drei Darstellungen. Mit `PLANKIT=<Pfad>` prüft e zusätzlich die Nachzeichnung des Beispielgebäudes mit PlanKits `validateTrace`/`traceSegments`.
+- **f – Skizzen wie 1.5.0.** Lädt GlasKit 1.5.0 aus Git (`f04ec0a`) neben der aktuellen Fassung mit demselben Projekt und vergleicht Wände, Räume, Fotowände, Felder und die Bilder in Modell, Glas und Papier pixelgenau.
