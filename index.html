@@ -23,6 +23,7 @@ header{background:var(--panel);border-bottom:1px solid var(--line2);display:flex
 header svg{width:34px;height:34px;flex:none}
 .brand b{font-size:18px;letter-spacing:.2px}
 .brand span{display:block;font-size:12px;color:var(--muted);margin-top:-2px}
+.brand small{font-size:11px;font-weight:500;color:var(--muted);background:#eef4fb;border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:2px}
 #projekt{margin-left:10px;padding-left:16px;border-left:1px solid var(--line2);min-width:0;flex:1}
 #projekt b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #projekt span{font-size:12px;color:var(--muted)}
@@ -95,6 +96,8 @@ canvas.drag{cursor:grabbing}canvas.hit{cursor:pointer}
 #start .reihe{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 #start .btn{padding:11px 18px;font-size:15px}
 #start small{display:block;margin-top:16px;color:var(--muted);font-size:12.5px;line-height:1.45}
+#start a.btn{text-decoration:none;display:inline-block}
+#start .eyebrow{font-size:11.5px;letter-spacing:1px;text-transform:uppercase;color:var(--accent2);font-weight:600}
 #meldung{position:absolute;left:50%;top:64px;transform:translateX(-50%);background:#fff3d6;border:1px solid #e2b34f;color:#5b3a00;border-radius:10px;padding:10px 16px;font-size:14px;display:none;z-index:9;max-width:80%}
 #meldung.auf{display:block}
 #ziehen{position:absolute;inset:10px;border:3px dashed #6fa3dc;border-radius:16px;background:rgba(63,124,192,.18);display:none;align-items:center;justify-content:center;color:#fff;font-size:22px;z-index:8;pointer-events:none}
@@ -107,7 +110,7 @@ canvas.drag{cursor:grabbing}canvas.hit{cursor:pointer}
 <body>
 <header>
   <svg viewBox="44 4 106 101" aria-hidden="true"><g fill="#363A90"><circle cx="93.44" cy="14.19" r="3.15"/><circle cx="117.44" cy="17.06" r="8.1"/><circle cx="75.19" cy="17.94" r="8.1"/><circle cx="94.56" cy="27.06" r="4.18"/><circle cx="130.94" cy="31.94" r="3.15"/><circle cx="60.44" cy="36.94" r="3.15"/><circle cx="119.81" cy="38.81" r="4.18"/><circle cx="71.81" cy="43.06" r="4.18"/><circle cx="102.31" cy="43.81" r="5.78"/><circle cx="139.94" cy="54.19" r="8.1"/><circle cx="54.06" cy="54.69" r="8.1"/><circle cx="86.56" cy="56.44" r="5.78"/><circle cx="103.81" cy="63.94" r="5.78"/><circle cx="121.94" cy="67.44" r="4.18"/><circle cx="74.44" cy="71.06" r="4.18"/><circle cx="133.94" cy="72.19" r="3.15"/><circle cx="62.81" cy="77.06" r="3.15"/><circle cx="99.81" cy="82.56" r="4.18"/><circle cx="119.44" cy="91.44" r="8.1"/><circle cx="75.81" cy="92.19" r="8.1"/><circle cx="99.81" cy="95.56" r="3.15"/></g><g stroke="#363A90"><line x1="93.44" y1="14.19" x2="117.44" y2="17.06" stroke-width="1.4"/><line x1="75.19" y1="17.94" x2="60.44" y2="36.94" stroke-width="1.4"/><line x1="130.94" y1="31.94" x2="139.94" y2="54.19" stroke-width="1.4"/><line x1="54.06" y1="54.69" x2="62.81" y2="77.06" stroke-width="1.4"/><line x1="133.94" y1="72.19" x2="119.44" y2="91.44" stroke-width="1.4"/><line x1="75.81" y1="92.19" x2="99.81" y2="95.56" stroke-width="1.4"/><line x1="94.56" y1="27.06" x2="102.31" y2="43.81" stroke-width="1.17"/><line x1="86.56" y1="56.44" x2="74.44" y2="71.06" stroke-width="1.17"/><line x1="103.81" y1="63.94" x2="121.94" y2="67.44" stroke-width="1.17"/></g></svg>
-  <div class="brand"><b>GlasKit</b><span>Das Gebäude aus Glas · Spektron</span></div>
+  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.1.0</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
   <div id="projekt"><b id="pName">–</b><span id="pInfo"></span></div>
   <button class="btn primary" id="ordner">Projektordner öffnen</button>
   <button class="btn" id="datei">Plan-Datei öffnen …</button>
@@ -150,9 +153,10 @@ canvas.drag{cursor:grabbing}canvas.hit{cursor:pointer}
   <div id="ziehen">Plan-Datei hier ablegen</div>
   <div id="start">
     <div class="box">
-      <h1>Schau durch das Gebäude.</h1>
-      <p>GlasKit stapelt die Geschosse aus PlanKit zu einem gläsernen Modell. Jede Probe leuchtet an ihrer Stelle – in der Farbe ihrer Bewertung und in der Höhe, in der sie genommen wurde.</p>
-      <div class="reihe">
+      <div class="eyebrow" id="sEyebrow" hidden></div>
+      <h1 id="sTitel">Schau durch das Gebäude.</h1>
+      <p id="sText">GlasKit stapelt die Geschosse aus PlanKit zu einem gläsernen Modell. Jede Probe leuchtet an ihrer Stelle – in der Farbe ihrer Bewertung und in der Höhe, in der sie genommen wurde.</p>
+      <div class="reihe" id="sKnoepfe">
         <button class="btn primary" id="sOrdner">Projektordner öffnen</button>
         <button class="btn" id="sDatei">Plan-Datei öffnen …</button>
         <button class="btn" id="sBeispiel">Beispielgebäude ansehen</button>
@@ -162,8 +166,371 @@ canvas.drag{cursor:grabbing}canvas.hit{cursor:pointer}
   </div>
 </main>
 
+<!-- spektron-ordner.js – byte-gleiche Kopie der Vorlage aus der Projektzentrale (in allen Spektron-Apps gleich). GlasKit ruft nur ort()/planHaupt()/labelkitWahl() OHNE „anlegen“ auf: lesen, nie schreiben. -->
+<script>
+/* SPEKTRON-ORDNER v1 – in allen Spektron-Apps byte-gleich halten (Vorlage: Projektzentrale/spektron-ordner.js).
+   Wo liegen die App-Daten eines Projekts? Grundsatz: Alles, was ohne App nicht nutzbar ist, liegt im Unterordner
+   „_Spektron“ des Projektordners; Fotos, PDFs, Word, Excel und CSV bleiben in den Büro-Ordnern.
+
+     <Projekt>/_Spektron/BITTE NICHT ANFASSEN.txt
+     <Projekt>/_Spektron/_Projekt.json, _Projekt_Sicherungen/        (früher direkt im Projektordner)
+     <Projekt>/_Spektron/FotoKit/      _Bildumbenenner.json, _FotoKit_Fassungen/   (früher Fotos/)
+     <Projekt>/_Spektron/FotoKit/Pruefsummen/  Pruefsummen_Originale_….sha256       (früher Fotos/)
+     <Projekt>/_Spektron/LabelKit/     …_Daten.json (früher Laboraufträge/), _Ablage-Protokoll.txt (früher Feldprotokolle/)
+     <Projekt>/_Spektron/ResultKit/    _Ergebnisse.json, _Ergebnisse.vorher.json   (früher Laborergebnisse/)
+     <Projekt>/_Spektron/PlanKit/      *.probenplan                                (früher Pläne/)
+     <Projekt>/_Spektron/BelegKit/     *.json, _BelegKit_Sicherungen/   (früher Abrechnung/; die CSV bleiben in Abrechnung/)
+     <Projekt>/_Spektron/Buero/        aufgaben/, vermerke/, frühere Übergaben    (früher _Buero/)
+     <Projekt>/_Spektron/Protokolle/   _Anlagen-Protokoll.txt                      (früher Mitteilungen/)
+     <Projekt>/_Spektron/BerichtKit/   _BerichtKit.json  Angaben zum Bericht (Vor Spektron: Mitteilungen/; die Word-Datei bleibt in Mitteilungen/)
+
+   Welche Projekte: Projektnummer ab 26.0560 – oder ein „_Spektron“-Ordner ist schon da (von Hand übernommenes Projekt).
+   Projekte „Vor Spektron“ bekommen nie einen „_Spektron“-Ordner; dort gilt immer der frühere Ort.
+
+   ort(projektordner, bereich) sagt, wo ein Bereich gerade liegt. Alle Apps lesen UND schreiben dort:
+     1. Neuer Ort hat passende Einträge und der frühere keine, oder der Umzug ist vermerkt → neu.
+        Neuer Ort hat die Hauptdatei des Bereichs (z. B. _Projekt.json, nicht nur _Projekt_Sicherungen/; LabelKit: nur eine
+        „…_Daten.json“ dieses Projekts, seit 11.11.2026 – eine fremde schaltet nicht mehr um) → neu – auch, wenn
+        am früheren Ort etwas liegt („konflikt“; z. B. eine Datei, die jemand dorthin kopiert hat). Ausnahme: der Umzug dieses
+        Bereichs läuft gerade oder wurde unterbrochen („laeuft“ im Umzugsvermerk) → dann gelten noch die Originale.
+     2. Sonst: früherer Ort hat passende Einträge → alt.
+     3. Nichts da → neu, wenn „_Spektron“ schon existiert oder UMSTELLUNG an ist; sonst alt.
+   (Bis 10.11.2026 galt bei Einträgen an beiden Orten ohne Umzugsvermerk der frühere Ort – Audit K1: eine einzelne
+   kopierte Datei schaltete so ein ganzes Projekt zurück.) zweiOrte()/zweiOrteText() liefern die eine sichtbare Zeile,
+   die jede App bei „konflikt“ zeigt.
+   Der Umzug selbst (kopieren, prüfen, vermerken, löschen) gehört in die Projektzentrale; hier nur lesen und planen.
+   Läuft im Browser (globalThis.SpektronOrdner) und in Node (module.exports, für Tests). Keine Abhängigkeiten. */
+(function(root){
+'use strict';
+
+const VERSION = 1;
+const ORDNER = '_Spektron';
+const AB = '26.0560';                 // erstes Spektron-Projekt
+const UMSTELLUNG = true;              // seit dem Umzug (28.10.2026): neue Projekte landen gleich in _Spektron
+const MARKER = '_Umzug.json';         // <Projekt>/_Spektron/_Umzug.json: { format:'spektron-umzug', version:1, bereiche:{ <id>:{ am, ... } }, laeuft:{ <id>: am } }
+const HINWEIS_DATEI = 'BITTE NICHT ANFASSEN.txt';
+const HINWEIS_TEXT = [
+  'Spektron – Daten der Apps zu diesem Projekt',
+  '',
+  'In diesem Ordner speichern die Spektron-Apps (Projektzentrale, LabelKit, FotoKit, ResultKit, PlanKit, BerichtKit, BelegKit, BüroKit)',
+  'ihre Arbeitsdaten: Projektdaten, Probenerfassung, Bildangaben, Laborwerte, Plan, Berichtsangaben, Zeiten und Büroaufgaben.',
+  '',
+  'Bitte nichts löschen, umbenennen oder verschieben – auch nicht beim Aufräumen.',
+  'Ohne diesen Ordner kennen die Apps das Projekt nicht mehr.',
+  '',
+  'Fotos, Pläne, Laborberichte, Anlagen und Abrechnungen (CSV) liegen wie gewohnt in den anderen Ordnern des Projekts.',
+  ''
+].join('\r\n');
+
+const nfc = s => String(s == null ? '' : s).normalize('NFC');
+const gleich = (a, b) => nfc(a).toLowerCase() === nfc(b).toLowerCase();
+/* Eintrag passt nur mit Name UND Art: ein Ordner „_Ergebnisse.json“ oder eine Datei „_Projekt_Sicherungen“ zählt nicht. */
+const datei = (...namen) => (name, art) => art === 'file' && namen.some(n => gleich(name, n));
+const ordner = (...namen) => (name, art) => art === 'directory' && namen.some(n => gleich(name, n));
+const muster = re => (name, art) => art === 'file' && re.test(nfc(name));
+const oder = (...regeln) => (name, art) => regeln.some(r => r(name, art));
+
+/* Bereiche: alt = Pfad ab Projektordner, neu = Pfad ab _Spektron, passt(name, art) = gehört der Eintrag dazu,
+   haupt(name, art, k) = die Datei, mit der die App arbeitet (Sicherungen, Vorher-Kopien und leere Ordner zählen nicht) –
+   nur sie lässt den neuen Ort gegen Einträge am früheren Ort gewinnen (ohne haupt: wie passt). k = { nr } aus dem
+   Projektordnernamen (PlanKit: die Hauptdatei heißt „Probenplan <Projektnummer> ….probenplan“). */
+const BEIWERK = /^(thumbs\.db|desktop\.ini|\.ds_store)$|\.crswap$/i;   // Windows/Chrome-Beiwerk – wie im Umzug: zählt nie als App-Datei
+const PLAN_NEBEN = / \((vorher|Wiederherstellung|Speicherkandidat|Kopie)\b[^)]*\)\.probenplan$/i;   // wie PlanKits Leiste
+const NR = /^(\d{2}\.\d{2,6})(?:[\s_-]|$)/;                                    // Projektnummer am Anfang des Ordnernamens
+const PLAN_NR = /^Probenplan (\d{2}\.\d{2,6})(?:[\s_-]|\.probenplan$)/i;          // „Probenplan 26.0606 ….probenplan“
+const projektNr = name => (NR.exec(nfc(name).trim()) || [])[1] || '';
+/* PlanKit-Hauptdatei: keine Sicherung UND – wenn der Ordnername eine Projektnummer hat – „Probenplan <diese Nummer> …“.
+   Die Nummer bleibt bei einem umbenannten Ordner (Dr.Ka → Dr. Ka) gleich; Notfallkopien („PlanKit Notfallkopie …“) und
+   Downloads („<Ordnername>.probenplan“) zählen so nie. Ohne lesbare Nummer: jede .probenplan ohne Sicherungs-Zusatz. */
+function planHaupt(name, art, k){
+  const n = nfc(name);
+  if (art !== 'file' || !/\.probenplan$/i.test(n) || PLAN_NEBEN.test(n)) return false;
+  if (!k || !k.nr) return true;
+  return (PLAN_NR.exec(n) || [])[1] === k.nr;
+}
+/* LabelKit-Projektdatei – dieselbe Regel wie LabelKit 5.1.0 (eigeneProjektdatei/projektdateienLesen), Audit o7/m1 (11.11.2026):
+   eigen = Name (NFC, ohne Rand-Leerzeichen) beginnt mit der Projektnummer, danach keine Ziffer („26.0604_Daten.json“, auch die
+   datierten „26.0604_12.10.2025_Daten.json“; nicht „26.06041…“). Die Nummer wird wie in LabelKit gelesen (2 Ziffern, Punkt, 3–6
+   Ziffern); ohne solche Nummer zählt jede „…_Daten.json“ als eigen. Fremde Dateien werden nie gelesen. */
+const LK_DATEI = /_Daten\.json$/i;
+const LK_NR = /(?<!\d)\d{2}\.\d{3,6}(?!\d)/;
+const lkNr = nr => (LK_NR.exec(nfc(nr)) || [''])[0];
+function labelkitEigen(name, nr){
+  if (!LK_DATEI.test(nfc(name))) return false;
+  const k = lkNr(nr); if (!k) return true;
+  const n = nfc(name).trim();
+  return n.startsWith(k) && !/^\d/.test(n.slice(k.length));
+}
+const lkHaupt = (name, art, k) => art === 'file' && labelkitEigen(name, k && k.nr);
+/** Welche LabelKit-Datei gilt im Ordner dir (Projektordnername für die Nummer)? Wie LabelKit: „<Nr>_Daten.json“ gilt; eine andere
+    eigene Datei nur, wenn sie laut „gespeichertAm“ später gespeichert wurde (Kopieren setzt das Änderungsdatum neu); ohne feste Datei
+    die eigene mit dem neuesten Änderungsdatum. → { datei: { name, file, text } | null, fremd: [Namen], eigene: [Namen] }.
+    Keine eigene Datei → datei null – nie auf eine fremde ausweichen. */
+const lkGespeichert = text => { try{ const t = Date.parse(JSON.parse(text).gespeichertAm); return isNaN(t) ? null : t; }catch(e){ return null; } };
+async function labelkitWahl(dir, projektName){
+  const r = { datei: null, fremd: [], eigene: [] };
+  if (!auflistbar(dir)) return r;
+  const nr = projektNr(projektName), k = lkNr(nr) || nr, fest = k ? nfc(k + '_Daten.json').toLowerCase() : null, alle = [];
+  for await (const h of dir.values()){
+    if (h.kind !== 'file' || !LK_DATEI.test(nfc(h.name))) continue;
+    if (!labelkitEigen(h.name, nr)){ r.fremd.push(h.name); continue; }   // fremde Datei: nicht einmal lesen
+    const file = await (await dir.getFileHandle(h.name)).getFile();
+    alle.push({ name: h.name, file, text: await file.text(), fest: fest !== null && nfc(h.name).toLowerCase() === fest });
+    r.eigene.push(h.name);
+  }
+  r.fremd.sort((a, b) => a.localeCompare(b));
+  const f = alle.find(e => e.fest);
+  if (f){
+    let beste = lkGespeichert(f.text); if (beste === null) beste = f.file.lastModified;
+    r.datei = f;
+    for (const e of alle){ const t = e.fest ? null : lkGespeichert(e.text); if (t !== null && t > beste){ beste = t; r.datei = e; } }
+  } else for (const e of alle) if (!r.datei || e.file.lastModified > r.datei.file.lastModified) r.datei = e;
+  if (r.datei) r.datei = { name: r.datei.name, file: r.datei.file, text: r.datei.text };
+  return r;
+}
+const BEREICHE = Object.freeze({
+  projekt:            Object.freeze({ app: 'Projektzentrale, FotoKit', alt: [], neu: [], passt: oder(datei('_Projekt.json'), ordner('_Projekt_Sicherungen')), haupt: datei('_Projekt.json') }),
+  fotokit:            Object.freeze({ app: 'FotoKit', alt: ['Fotos'], neu: ['FotoKit'], passt: oder(datei('_Bildumbenenner.json'), ordner('_FotoKit_Fassungen')), haupt: datei('_Bildumbenenner.json') }),
+  fotokitPruefsummen: Object.freeze({ app: 'FotoKit', alt: ['Fotos'], neu: ['FotoKit', 'Pruefsummen'], passt: muster(/^Pruefsummen_Originale_.*\.sha256$/i) }),
+  // haupt: nur die LabelKit-Datei dieses Projekts (Audit o7) – eine fremde „…_Daten.json“ in „_Spektron/LabelKit“ schaltet den Bereich nicht um.
+  // fremd: was passt, aber nicht haupt ist, gehört zu einem anderen Projekt (für die Zeile). passt bleibt: der Umzug nimmt weiter jede mit.
+  labelkit:           Object.freeze({ app: 'LabelKit', alt: ['Laboraufträge'], neu: ['LabelKit'], passt: muster(/_Daten\.json$/i), haupt: lkHaupt, fremd: true }),
+  labelkitAblage:     Object.freeze({ app: 'LabelKit', alt: ['Feldprotokolle'], neu: ['LabelKit'], passt: datei('_Ablage-Protokoll.txt') }),
+  resultkit:          Object.freeze({ app: 'ResultKit', alt: ['Laborergebnisse'], neu: ['ResultKit'], passt: datei('_Ergebnisse.json', '_Ergebnisse.vorher.json'), haupt: datei('_Ergebnisse.json') }),
+  plankit:            Object.freeze({ app: 'PlanKit', alt: ['Pläne'], neu: ['PlanKit'], passt: muster(/\.probenplan$/i), haupt: planHaupt }),
+  // nur die Dateien, die BelegKit selbst schreibt (dieselben Muster wie BelegKits Leser): Zeiten je Person, Berichtsangaben, Stände – andere JSON bleiben
+  belegkit:           Object.freeze({ app: 'BelegKit', alt: ['Abrechnung'], neu: ['BelegKit'], passt: oder(muster(/^Aufwand_[A-Za-zÄÖÜäöü]{1,6}\.json$/), datei('_Abrechnung.json'), muster(/^.+_Aufwand_\d{4}-\d{2}-\d{2}(?:_\d+)?\.json$/i), ordner('_BelegKit_Sicherungen')),
+    haupt: oder(muster(/^Aufwand_[A-Za-zÄÖÜäöü]{1,6}\.json$/), datei('_Abrechnung.json'), muster(/^.+_Aufwand_\d{4}-\d{2}-\d{2}(?:_\d+)?\.json$/i)) }),
+  buero:              Object.freeze({ app: 'BüroKit, Projektzentrale', alt: ['_Buero'], neu: ['Buero'], passt: name => !BEIWERK.test(nfc(name)) }),
+  anlagenProtokoll:   Object.freeze({ app: 'Projektzentrale, PlanKit', alt: ['Mitteilungen'], neu: ['Protokolle'], passt: datei('_Anlagen-Protokoll.txt') }),
+  berichtkit:         Object.freeze({ app: 'BerichtKit', alt: ['Mitteilungen'], neu: ['BerichtKit'], passt: datei('_BerichtKit.json') })
+});
+
+/** Projektnummer → Zahl zum Vergleichen (26.0560 → 26000560), sonst null. Gleiche Regel wie SPEKTRON-ORDNERNAME. */
+function projektKey(name){
+  const m = /^(\d{2})\.(\d{2,6})(?:[\s_-]|$)/.exec(nfc(name).trim());
+  return m ? (+m[1]) * 1e6 + (+m[2]) : null;
+}
+const AB_KEY = projektKey(AB);
+
+/* Ein Ordner, der sich nicht auflisten lässt (nur Testobjekte – echte Ordner können das immer), gilt als leer;
+   ein solcher Projektordner bleibt immer beim bisherigen Ort. */
+const auflistbar = dir => !!dir && typeof dir.values === 'function';
+async function kind(dir, name){
+  if (!auflistbar(dir)) return null;
+  for await (const h of dir.values()) if (gleich(h.name, name)) return h;
+  return null;
+}
+/** Unterordner entlang eines Pfads: zuerst direkt mit dem Namen (wie findSubdir in den Apps), sonst gesucht –
+    ohne Groß-/Kleinschreibung und Unicode-Form verglichen. */
+async function unter(dir, pfad, anlegen){
+  let d = dir;
+  for (const teil of pfad){
+    let direkt = null;
+    try{ direkt = await d.getDirectoryHandle(teil); }catch(e){ /* fehlt, andere Schreibweise oder Datei gleichen Namens */ }
+    if (direkt){ d = direkt; continue; }
+    const h = await kind(d, teil);
+    if (h && h.kind === 'directory'){ d = await d.getDirectoryHandle(h.name); continue; }
+    if (h || !anlegen) return null;        // Datei gleichen Namens oder nicht anlegen
+    d = await d.getDirectoryHandle(teil, { create: true });
+  }
+  return d;
+}
+async function passende(dir, b){
+  const r = [];
+  if (auflistbar(dir)) for await (const h of dir.values()) if (b.passt(h.name, h.kind)) r.push({ name: h.name, art: h.kind });
+  return r;
+}
+/** Liegt am Ort die Hauptdatei des Bereichs? Leere Dateien (0 Byte), leere Ordner (auch verschachtelt) und Windows-Beiwerk
+    zählen nicht – so bleibt ein abgebrochenes Kopieren zurück, und das ist kein Ersatz für die Dateien am früheren Ort. */
+// Nicht lesbar (z. B. SMB kurz weg) zählt als vorhanden – nie als „leer“, sonst schaltete ein Lesefehler auf den früheren Ort zurück (Codex)
+async function dateiMitInhalt(fh){ try{ return (await fh.getFile()).size > 0; }catch(e){ return true; } }
+async function ordnerMitInhalt(d, tiefe){
+  if (!auflistbar(d) || tiefe > 8) return false;
+  for await (const y of d.values()){
+    if (BEIWERK.test(nfc(y.name))) continue;
+    try{
+      if (y.kind === 'directory'){ if (await ordnerMitInhalt(await d.getDirectoryHandle(y.name), tiefe + 1)) return true; }
+      else if (await dateiMitInhalt(await d.getFileHandle(y.name))) return true;
+    }catch(e){ return true; }   // nicht lesbar = vorhanden
+  }
+  return false;
+}
+async function hauptDa(dir, b, k){
+  if (!auflistbar(dir)) return false;
+  const h = b.haupt ? (n, a) => b.haupt(n, a, k) : b.passt;
+  for await (const x of dir.values()){
+    if (BEIWERK.test(nfc(x.name)) || !h(x.name, x.kind)) continue;
+    try{
+      if (x.kind === 'directory'){ if (await ordnerMitInhalt(await dir.getDirectoryHandle(x.name), 1)) return true; }
+      else if (await dateiMitInhalt(await dir.getFileHandle(x.name))) return true;
+    }catch(e){ return true; }   // nicht lesbar = vorhanden
+  }
+  return false;
+}
+async function hatSpektron(projektDir){
+  const h = await kind(projektDir, ORDNER);
+  return h && h.kind === 'directory' ? await projektDir.getDirectoryHandle(h.name) : null;
+}
+async function umzugVermerk(sp){
+  if (!sp) return null;
+  try{
+    const h = await kind(sp, MARKER);
+    if (!h || h.kind !== 'file') return null;
+    const o = JSON.parse(await (await (await sp.getFileHandle(h.name)).getFile()).text());
+    return o && o.format === 'spektron-umzug' && typeof o.version === 'number' && o.version >= 1 && o.bereiche && typeof o.bereiche === 'object' ? o : null;   // auch neuere Fassungen zählen als Vermerk
+  }catch(e){ return null; }          // unlesbar = kein Vermerk; dann gilt der frühere Ort, solange dort etwas liegt
+}
+async function hinweisSchreiben(sp){
+  if (await kind(sp, HINWEIS_DATEI)) return;
+  const w = await (await sp.getFileHandle(HINWEIS_DATEI, { create: true })).createWritable();
+  try{ await w.write(HINWEIS_TEXT); await w.close(); }catch(e){ try{ await w.abort(); }catch(_){} throw e; }
+}
+/** „_Spektron“ holen; mit anlegen auch erstellen (einmalig mit Hinweisdatei). */
+async function spektronDir(projektDir, anlegen){
+  let sp = await hatSpektron(projektDir);
+  if (!sp && anlegen){
+    if (await kind(projektDir, ORDNER)) throw Error('Im Projektordner liegt eine Datei „' + ORDNER + '“ – bitte umbenennen.');
+    sp = await projektDir.getDirectoryHandle(ORDNER, { create: true });
+  }
+  if (sp && anlegen) await hinweisSchreiben(sp);
+  return sp;
+}
+
+/** Spektron-Projekt: Nummer ab 26.0560 oder „_Spektron“-Ordner vorhanden. */
+async function istSpektronProjekt(projektDir){
+  const k = projektKey(projektDir.name);
+  if (k != null && k >= AB_KEY) return true;
+  return !!(await hatSpektron(projektDir));
+}
+
+/** Wo liegt der Bereich? → { dir, wo:'neu'|'alt', pfad, konflikt, umgezogen, unterbrochen, bereich }.
+    dir ist null, wenn der Ordner fehlt und anlegen nicht gesetzt ist. Mit anlegen am neuen Ort wird auch die Hinweisdatei
+    ergänzt, falls sie fehlt. konflikt = an beiden Orten liegen passende Einträge; es gilt dann der neue Ort. Mit umgezogen
+    (Umzug vermerkt) sind das Nachzügler am früheren Ort – z. B. von einer noch offenen alten App-Version; ohne Vermerk eine
+    dorthin kopierte oder gespeicherte Datei. unterbrochen = Umzug des Bereichs begonnen, aber nicht vermerkt: dann gilt
+    noch der frühere Ort (die Kopien in „_Spektron“ können unvollständig sein). Gelöscht wird hier nie etwas. */
+async function ort(projektDir, bereich, optionen){
+  const b = BEREICHE[bereich];
+  if (!b) throw Error('Unbekannter Spektron-Bereich: ' + bereich);
+  const anlegen = !!(optionen && optionen.anlegen);
+  const altPfad = b.alt, neuPfad = [ORDNER].concat(b.neu);
+  const fertig = async (wo, dir, konflikt, umgezogen, unterbrochen) => {
+    if (anlegen && wo === 'neu'){ const sp = await spektronDir(projektDir, true); if (!dir) dir = await unter(sp, b.neu, true); }
+    else if (anlegen && !dir) dir = await unter(projektDir, altPfad, true);
+    return { dir: dir || null, wo, pfad: (wo === 'neu' ? neuPfad : altPfad).join('/'), konflikt: !!konflikt, umgezogen: !!umgezogen, unterbrochen: !!unterbrochen, bereich };
+  };
+  const altDir = await unter(projektDir, altPfad, false);
+  if (!auflistbar(projektDir) || !(await istSpektronProjekt(projektDir))) return fertig('alt', altDir, false, false, false);
+  const sp = await hatSpektron(projektDir);
+  const neuDir = sp ? await unter(sp, b.neu, false) : null;
+  const altHat = (await passende(altDir, b)).length > 0;
+  const neuHat = (await passende(neuDir, b)).length > 0;
+  const konflikt = altHat && neuHat;
+  const v = (await umzugVermerk(sp)) || { bereiche: {} };
+  const umgezogen = !!v.bereiche[bereich];
+  const unterbrochen = !umgezogen && !!(v.laeuft && typeof v.laeuft === 'object' && v.laeuft[bereich]);
+  const k = { nr: projektNr(projektDir.name) };
+  // Codex (11.11.2026): Umzug vermerkt, in „_Spektron/LabelKit“ aber nur Dateien anderer Projekte und die Datei dieses Projekts am
+  // früheren Ort (z. B. von einer älteren App-Fassung) → der frühere Ort gilt. Nur für LabelKit (fremd); alle anderen Bereiche wie bisher.
+  const nurFremdNeu = umgezogen && altHat && !!b.fremd && !(await hauptDa(neuDir, b, k)) && await hauptDa(altDir, b, k);
+  if (neuHat && (!altHat || umgezogen) && !nurFremdNeu) return fertig('neu', neuDir, konflikt, umgezogen, false);
+  if (altHat && !unterbrochen && !nurFremdNeu && await hauptDa(neuDir, b, k)) return fertig('neu', neuDir, konflikt, umgezogen, false);   // K1
+  if (altHat) return fertig('alt', altDir, konflikt, umgezogen, unterbrochen);
+  return (sp || UMSTELLUNG) ? fertig('neu', neuDir, false, umgezogen, false) : fertig('alt', altDir, false, umgezogen, false);
+}
+
+/* ---------- Die eine sichtbare Zeile bei Dateien an zwei Orten (für alle Apps gleich) ---------- */
+const zwei = n => String(n).padStart(2, '0');
+function datumText(ms){
+  if (!ms) return '';
+  const d = new Date(ms);
+  return zwei(d.getDate()) + '.' + zwei(d.getMonth() + 1) + '.' + d.getFullYear() + ', ' + zwei(d.getHours()) + ':' + zwei(d.getMinutes());
+}
+async function eintraegeMitDatum(dir, b, k){
+  const r = [];
+  if (!auflistbar(dir)) return r;
+  for await (const h of dir.values()){
+    if (!b.passt(h.name, h.kind)) continue;
+    let zeit = 0;
+    if (h.kind === 'file'){ try{ zeit = (await (await dir.getFileHandle(h.name)).getFile()).lastModified || 0; }catch(e){} }
+    r.push({ name: h.name, ordner: h.kind === 'directory', zeit, haupt: !b.haupt || b.haupt(h.name, h.kind, k) });
+  }
+  // Hauptdateien zuerst (die Datei, mit der die App arbeitet – nicht eine Sicherung), dann Dateien vor Ordnern, neueste zuerst
+  return r.sort((a, c) => (c.haupt - a.haupt) || (a.ordner - c.ordner) || (c.zeit - a.zeit) || a.name.localeCompare(c.name));
+}
+/** Bereiche mit Dateien an beiden Orten (nur lesen). bereiche: Liste der Bereich-IDs, die die App nutzt (Standard: alle).
+    → [{ bereich, app, wo, umgezogen, unterbrochen, neuPfad, altPfad, neu:[{name,ordner,zeit}], alt:[…], altNeuer }] */
+async function zweiOrte(projektDir, bereiche){
+  const aus = [];
+  if (!projektDir || !auflistbar(projektDir) || !(await istSpektronProjekt(projektDir))) return aus;
+  const sp = await hatSpektron(projektDir);
+  for (const id of (bereiche || Object.keys(BEREICHE))){
+    const b = BEREICHE[id]; if (!b) continue;
+    const o = await ort(projektDir, id);
+    if (!o.konflikt) continue;
+    const k = { nr: projektNr(projektDir.name) };
+    const neu = await eintraegeMitDatum(sp ? await unter(sp, b.neu, false) : null, b, k);
+    const alt = await eintraegeMitDatum(await unter(projektDir, b.alt, false), b, k);
+    // „neuer“ nur nach den Hauptdateien beurteilen (eine neuere Sicherung sagt nichts über die Datei, die die App liest)
+    const max = l => { const h = l.filter(e => e.haupt && !e.ordner); return (h.length ? h : l).reduce((m, e) => Math.max(m, e.zeit || 0), 0); };
+    aus.push({ bereich: id, app: b.app, wo: o.wo, umgezogen: o.umgezogen, unterbrochen: o.unterbrochen,
+      neuPfad: [ORDNER].concat(b.neu).join('/'), altPfad: b.alt.join('/'), neu, alt, altNeuer: max(alt) > max(neu),
+      nurFremd: !!b.fremd && neu.length > 0 && !neu.some(e => e.haupt) });   // in „_Spektron“ nur Dateien anderer Projekte
+  }
+  return aus;
+}
+/* Je Seite eine Datei nennen (die mit gleichem Namen wie auf der anderen Seite, sonst die neueste), Rest als „und n weitere“. */
+function dateienText(pfad, liste, bevorzugt){
+  const pf = n => '„' + (pfad ? pfad + '/' : '') + n + '“';
+  const haupt = (bevorzugt && liste.find(e => gleich(e.name, bevorzugt))) || liste[0];
+  if (!haupt) return '';
+  const t = haupt.ordner ? pf(haupt.name + '/') : pf(haupt.name) + (haupt.zeit ? ' (' + datumText(haupt.zeit) + ')' : '');
+  return liste.length > 1 ? t + ' und ' + (liste.length - 1) + ' weitere' : t;
+}
+/** Eine Zeile Klartext zu einem Eintrag aus zweiOrte() – „du“, ohne Fachwörter. optionen.projektzentrale: ohne den
+    Verweis auf die Projektzentrale (dort steht das Weitere direkt darunter). */
+function zweiOrteText(e, optionen){
+  const pz = !(optionen && optionen.projektzentrale);
+  const altOrt = e.altPfad ? 'in „' + e.altPfad + '“' : 'im Projektordner';
+  const a = e.alt[0] ? e.alt[0].name : '', altText = dateienText(e.altPfad, e.alt), neuText = dateienText(e.neuPfad, e.neu, a);
+  if (e.wo === 'alt' && !e.unterbrochen && e.nurFremd){   // Audit o7: fremde Datei in „_Spektron“, die eigene am früheren Ort
+    const n = e.neu.filter(x => !x.ordner).map(x => x.name), fremd = '„' + n[0] + '“' + (n.length > 1 ? ' und ' + (n.length - 1) + ' weitere' : '');
+    return '⚠ ' + e.app + ': Dateien an zwei Orten. Es gilt ' + altText + '. In „' + e.neuPfad + '“ ' + (n.length > 1 ? 'liegen' : 'liegt') + ' nur ' + fremd +
+      ' – nach dem Namen nicht von diesem Projekt; keine App liest sie.' + (pz ? ' Gelöscht wird nichts – in der Projektzentrale steht, was zu tun ist.' : '');
+  }
+  if (e.wo === 'alt' && e.unterbrochen) return '⚠ ' + e.app + ': Dateien an zwei Orten – der Umzug in „' + ORDNER + '“ wurde unterbrochen. Es gilt noch ' +
+    altText + '. Nicht verwendet: ' + neuText + '.' + (pz ? ' Bitte in der Projektzentrale „Umzug erneut ausführen“.' : '');
+  if (e.wo === 'alt') return '⚠ ' + e.app + ': Dateien an zwei Orten. Es gilt noch ' + altText + ' – in „' + ORDNER + '“ liegt nur ' +
+    'eine Sicherung, eine leere Datei oder ein leerer Ordner, nicht die Datei selbst (vermutlich ein unvollständiger Umzug). Nicht verwendet: ' + neuText + '.' +
+    (pz ? ' Bitte in der Projektzentrale „Umzug erneut ausführen“.' : '');
+  return '⚠ ' + e.app + ': Dateien an zwei Orten. Es gilt ' + neuText + '. Nicht verwendet: ' + altText + '.' +
+    (e.altNeuer ? ' Die Datei ' + altOrt + ' ist neuer – vielleicht hat eine ältere App-Fassung dort gespeichert. Schließ alle Spektron-Tabs auf allen PCs und öffne sie neu.' : '') +
+    (pz ? ' Gelöscht wird nichts – in der Projektzentrale steht, was mit der Datei ' + altOrt + ' zu tun ist.' : '');
+}
+
+/** Für den Umzug (nur lesen): je Bereich, was am früheren Ort liegt und wohin es gehört. Leer für Projekte „Vor Spektron“. */
+async function umzugListe(projektDir){
+  if (!(await istSpektronProjekt(projektDir))) return [];
+  const liste = [];
+  for (const id of Object.keys(BEREICHE)){
+    const b = BEREICHE[id];
+    const eintraege = await passende(await unter(projektDir, b.alt, false), b);
+    if (eintraege.length) liste.push({ bereich: id, app: b.app, von: b.alt.join('/'), nach: [ORDNER].concat(b.neu).join('/'), eintraege });
+  }
+  return liste;
+}
+
+const api = Object.freeze({ VERSION, ORDNER, AB, UMSTELLUNG, MARKER, HINWEIS_DATEI, HINWEIS_TEXT, BEREICHE,
+  projektKey, projektNr, planHaupt, labelkitEigen, labelkitWahl, istSpektronProjekt, ort, umzugListe, spektronDir, unter, hauptDa, zweiOrte, zweiOrteText, datumText });
+if (typeof module !== 'undefined' && module.exports) module.exports = api;
+root.SpektronOrdner = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+/* SPEKTRON-ORDNER-ENDE */
+</script>
 <script>
 'use strict';
+const VERSION='1.1.0';
 /* ================= Bewertung: aus PlanKit (src/results.ts) übernommen – dort ändern, hier mitändern ================= */
 const UNRATED='#c3ccd5',BELOW_LIMIT='#749bb5',NOT_DETECTED='#8b83a8',NOT_DETERMINED='#9d8975';
 function labNumber(raw){
@@ -315,7 +682,7 @@ async function geschossBauen(name,plan,markers){
   const ms=(Array.isArray(markers)?markers:[]).filter(x=>x&&Number.isFinite(x.x)&&Number.isFinite(x.y)).map(x=>({...x,label:String(x.label??''),kind:x.kind==='fire'?'fire':'sample'}));
   return {name,plan,papier,glas,mpu,marker:ms,sichtbar:true,pw:0,ph:0,deck:1};
 }
-async function projektLaden(p,name,demo=false){
+async function projektLaden(p,name,demo=false,quelle={art:demo?'beispiel':'datei',dir:null,name}){
   if(!p||p.format!=='probenplan'||!p.plan)throw Error('Das ist keine PlanKit-Datei (*.probenplan).');
   const liste=[];
   if(Array.isArray(p.sheets)&&p.sheets.length){const akt=p.active??0;p.sheets.forEach((s,i)=>liste.push(i===akt?{name:s.name,plan:p.plan,markers:p.markers}:{name:s.name,plan:s.plan,markers:s.markers}));}
@@ -330,7 +697,7 @@ async function projektLaden(p,name,demo=false){
   const ausNutzung=['Wohnen','Büro','Öffentlich','Gesundheit & Labor'].includes(nutzung)?'residential':['Gewerbe/Industrie','Landwirtschaft'].includes(nutzung)?'industrial':undefined;
   const settings=p.results&&typeof p.results==='object'?p.results:ausNutzung?{usage:ausNutzung,parameter:'*',scales:{}}:undefined;
   for(const g of gs)for(const m of g.marker)if(m.kind==='sample')m.b=bewerte(m,settings);
-  S.geschosse=gs;S.name=name;S.demo=demo;S.offen=Array.isArray(p.pending)?p.pending.length:0;S.massstab=alle;
+  S.geschosse=gs;S.name=name;S.demo=demo;S.quelle=quelle;S.offen=Array.isArray(p.pending)?p.pending.length:0;S.massstab=alle;
   S.wahl=null;S.artAus.clear();S.teilchen=[];tourEnde();karteZu();
   S.kam={yaw:-1.5,pitch:.5,zoom:.62,tx:0,ty:0,tz:mitteZ()};S.ziel={...ganz(),dauer:2.6,t:0,von:{...S.kam}};S.t0=performance.now();
   seiteFuellen();kopfFuellen();$('beispiel').classList.toggle('auf',demo);
@@ -362,28 +729,110 @@ function seiteFuellen(){
 }
 
 /* ---------- Dateien ---------- */
-async function dateiLesen(file,name){
-  try{const p=JSON.parse(await file.text());nutzung=nutzung||'';await projektLaden(p,name||file.name.replace(/^Probenplan\s+/i,'').replace(/\.probenplan$/i,''));$('start').classList.add('weg');}
-  catch(e){melde(e instanceof SyntaxError?'Die Datei lässt sich nicht lesen (kein gültiges PlanKit-Format).':e.message||String(e),9000);}
+// Quelle des geöffneten Plans: 'ordner' (Projektordner – nur dann gibt es Fotos) oder 'datei' (einzelne .probenplan) oder 'beispiel'.
+S.quelle={art:'beispiel',dir:null,name:''};
+async function dateiLesen(file,name,quelle={art:'datei',dir:null}){
+  try{const p=JSON.parse(await file.text());nutzung=nutzung||'';const n=name||file.name.replace(/^Probenplan\s+/i,'').replace(/\.probenplan$/i,'');
+    await projektLaden(p,n,false,{...quelle,name:n});$('start').classList.add('weg');return true;}
+  catch(e){melde(e instanceof SyntaxError?'Die Datei lässt sich nicht lesen (kein gültiges PlanKit-Format).':e.message||String(e),9000);return false;}
 }
 async function unterordner(dir,pfad){let d=dir;for(const n of pfad){try{d=await d.getDirectoryHandle(n);}catch{return null;}}return d;}
-async function ordnerOeffnen(){
-  if(!window.showDirectoryPicker){melde('Dieser Browser kann keine Ordner öffnen. Bitte Edge oder Chrome benutzen – oder „Plan-Datei öffnen …“.');return;}
-  let dir;try{dir=await window.showDirectoryPicker({mode:'read',id:'glaskit'});}catch{return;}
-  // Haupt-Datei wie PlanKit: „Probenplan <Ordner>.probenplan“ in _Spektron/PlanKit (neu) oder Pläne (früher). Kopien „(… ).probenplan“ zählen nicht.
+const SO=window.SpektronOrdner;   // gemeinsame Ortsregel (alt/neu), siehe oben – nur lesend benutzt
+/** Ort eines Bereichs nach spektron-ordner.js (ohne „anlegen“: nur lesen). Fehler → null. */
+async function bereich(dir,name){if(!SO)return null;try{return await SO.ort(dir,name);}catch{return null;}}
+/** PlanKit-Datei im Projektordner: Ort nach spektron-ordner.js („_Spektron/PlanKit“ oder früher „Pläne“), Hauptdatei wie PlanKit
+    („Probenplan <Ordnername>.probenplan“, sonst die neueste ohne Sicherungs-Zusatz). Ordner ohne Projektnummer (z. B. „Pläne“
+    selbst gewählt): wie bisher in „_Spektron/PlanKit“, „Pläne“ und im Ordner selbst suchen. */
+async function planFinden(dir){
+  const nr=SO?SO.projektNr(dir.name):'',k={nr},haupt=n=>SO?SO.planHaupt(n,'file',k):/\.probenplan$/i.test(n)&&!/\)\.probenplan$/i.test(n);
+  const o=await bereich(dir,'plankit');
+  if(o&&o.dir){const funde=[];for await(const h of o.dir.values())if(h.kind==='file'&&haupt(h.name))funde.push({h,f:await h.getFile()});
+    const genau=funde.find(x=>x.h.name.normalize('NFC')===`Probenplan ${dir.name}.probenplan`.normalize('NFC'));
+    funde.sort((a,b)=>b.f.lastModified-a.f.lastModified);if(genau||funde[0])return {f:(genau||funde[0]).f,pfad:o.pfad};}
   const funde=[];
   for(const pfad of [['_Spektron','PlanKit'],['Pläne'],[]]){const d=await unterordner(dir,pfad);if(!d)continue;
-    for await(const h of d.values())if(h.kind==='file'&&/\.probenplan$/i.test(h.name)){const f=await h.getFile();funde.push({f,haupt:!/\)\.probenplan$/i.test(h.name),neu:pfad.length===2});}
+    for await(const h of d.values())if(h.kind==='file'&&/\.probenplan$/i.test(h.name)){const f=await h.getFile();funde.push({f,haupt:!/\)\.probenplan$/i.test(h.name),pfad:pfad.join('/')});}
     if(funde.some(x=>x.haupt))break;}
-  if(!funde.length){melde(`In „${dir.name}“ liegt noch kein Plan aus PlanKit. Bitte den Projektordner wählen (z. B. „26.0560 Stollenstr. Gladbeck Dr.Ka“) – oder erst in PlanKit einen Plan anlegen.`,10000);return;}
   funde.sort((a,b)=>(b.haupt-a.haupt)||(b.f.lastModified-a.f.lastModified));
-  nutzung='';try{const sp=await unterordner(dir,['_Spektron']);const h=await (sp||dir).getFileHandle('_Projekt.json');const pj=JSON.parse(await (await h.getFile()).text());if(typeof pj.nutzung==='string')nutzung=pj.nutzung.trim();}catch{/* ohne Projektdaten */}
-  await dateiLesen(funde[0].f,dir.name);
+  return funde[0]||null;
+}
+async function nutzungLesen(dir){
+  nutzung='';
+  try{const o=await bereich(dir,'projekt'),d=o&&o.dir?o.dir:(await unterordner(dir,['_Spektron']))||dir;const h=await d.getFileHandle('_Projekt.json');
+    const pj=JSON.parse(await (await h.getFile()).text());if(pj&&typeof pj.nutzung==='string')nutzung=pj.nutzung.trim();}catch{/* ohne Projektdaten */}
+}
+const istProjekt=name=>/^\d{2}\.\d{2,6}(?:[\s_-]|$)/.test(String(name).normalize('NFC').trim());
+const PLANKIT_URL='../Probenplan/';   // wie in der Projektzentrale
+const planKitLink=name=>PLANKIT_URL+(name&&istProjekt(name)?'#projekt='+encodeURIComponent(name):'');
+/** Projektordner lesen (nur lesend). Ohne Plan: ein Satz und PlanKit anbieten. */
+async function projektOrdnerLesen(dir){
+  startZeigen({eyebrow:'Projekt',titel:dir.name,text:'Wird gelesen …',knoepfe:[]});
+  let plan;try{plan=await planFinden(dir);}catch(e){startZeigen({eyebrow:'Projekt',titel:dir.name,text:`Der Ordner lässt sich nicht lesen: ${e.message||e}`,knoepfe:[K.ordner,K.beispiel]});return false;}
+  if(!plan){
+    startZeigen({eyebrow:'Projekt',titel:dir.name,text:'In diesem Projekt gibt es noch keinen Plan aus PlanKit – leg ihn dort an, dann steht das Gebäude hier.',
+      knoepfe:[{text:'PlanKit öffnen',primary:true,href:planKitLink(dir.name),target:'plankit'},K.ordner,K.beispiel]});
+    return false;}
+  await nutzungLesen(dir);
+  const ok=await dateiLesen(plan.f,dir.name,{art:'ordner',dir,planPfad:plan.pfad});
+  if(ok&&istProjekt(dir.name))projektInUrl(dir.name);
+  return ok;
+}
+async function ordnerOeffnen(){
+  if(!window.showDirectoryPicker){melde('Dieser Browser kann keine Ordner öffnen. Bitte Edge oder Chrome benutzen – oder „Plan-Datei öffnen …“.');return;}
+  let dir;const root=await archiv();
+  try{dir=await window.showDirectoryPicker({mode:'read',id:'glaskit',...(root?{startIn:root}:{})});}catch(e){if(e&&e.name==='AbortError')return;try{dir=await window.showDirectoryPicker({mode:'read',id:'glaskit'});}catch{return;}}
+  await projektOrdnerLesen(dir);
+}
+
+/* ---------- Übergabe aus der Projektzentrale: #projekt=<Ordnername> ----------
+   Wie PlanKit und FotoKit: Archivordner aus IndexedDB „mosaik-suite“ (Store „kv“, Schlüssel „archiv“), dann den Projektordner
+   per Name öffnen. GlasKit fragt nur nach LESErecht. Braucht der Browser dafür einen Klick, steht ein Knopf da – keine Fehlermeldung. */
+function suiteDb(){return new Promise((ok,nein)=>{const r=indexedDB.open('mosaik-suite',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>nein(r.error);});}
+async function archiv(){try{const db=await suiteDb();try{return await new Promise((ok,nein)=>{const r=db.transaction('kv').objectStore('kv').get('archiv');r.onsuccess=()=>ok(r.result||null);r.onerror=()=>nein(r.error);});}finally{db.close();}}catch{return null;}}
+/** Leserecht prüfen; mit fragen=true fragt der Browser (nur direkt nach einem Klick erlaubt). */
+async function leserecht(h,fragen){const o={mode:'read'};try{if(!h.queryPermission||await h.queryPermission(o)==='granted')return true;return !!(fragen&&h.requestPermission)&&await h.requestPermission(o)==='granted';}catch{return false;}}
+function projektAusUrl(){try{const h=new URLSearchParams(location.hash.slice(1)).get('projekt');return h??new URLSearchParams(location.search).get('projekt');}catch{return null;}}
+/** #projekt=<Name> setzen (andere Fragmentteile bleiben), ohne neuen Verlaufseintrag. */
+function projektInUrl(name){
+  try{const u=new URL(location.href),teile=u.hash.slice(1).split('&').filter(t=>t&&!new URLSearchParams(t).has('projekt'));teile.push('projekt='+encodeURIComponent(name));u.searchParams.delete('projekt');u.hash=teile.join('&');
+    if(u.href!==location.href)history.replaceState(history.state,'',u);}catch{/* ohne Verlauf */}
+  document.title=`${name} – GlasKit`;
+}
+let zentraleLauf=0;
+async function ausZentrale(name){
+  const lauf=++zentraleLauf;
+  startZeigen({eyebrow:'Aus der Projektzentrale',titel:`Projekt ${name}`,text:'Wird geöffnet …',knoepfe:[]});
+  const root=await archiv();if(lauf!==zentraleLauf)return;
+  if(!root){startZeigen({eyebrow:'Aus der Projektzentrale',titel:`Projekt ${name}`,text:'Der Archivordner ist in diesem Browser noch nicht bekannt. Öffne ihn einmal in der Projektzentrale – oder wähl hier den Projektordner selbst.',knoepfe:[{...K.ordner,primary:true},K.beispiel]});return;}
+  const go=async()=>{
+    let dir;try{dir=await root.getDirectoryHandle(name);}
+    catch(e){if(lauf!==zentraleLauf)return;startZeigen({eyebrow:'Aus der Projektzentrale',titel:`Projekt ${name}`,text:e&&e.name==='NotFoundError'?`Im Archivordner „${root.name}“ gibt es keinen Ordner „${name}“ (mehr). Wurde er umbenannt?`:`Der Archivordner lässt sich nicht lesen: ${e&&e.message||e}`,knoepfe:[{...K.ordner,primary:true},K.beispiel]});return;}
+    if(lauf===zentraleLauf)await projektOrdnerLesen(dir);
+  };
+  if(await leserecht(root,false)){if(lauf===zentraleLauf)await go();return;}
+  if(lauf!==zentraleLauf)return;
+  startZeigen({eyebrow:'Aus der Projektzentrale',titel:`Projekt ${name}`,text:'Der Browser möchte einmal bestätigt haben, dass GlasKit den Archivordner lesen darf. GlasKit liest nur – es ändert nichts im Projekt.',
+    knoepfe:[{text:`Projekt ${name} öffnen`,primary:true,id:'sErlauben',aktion:async()=>{if(await leserecht(root,true))await go();else melde('Ohne Lesezugriff auf den Archivordner kann GlasKit das Projekt nicht öffnen. Du kannst es erneut versuchen oder den Projektordner selbst wählen.',9000);}},K.beispiel]});
+}
+addEventListener('hashchange',()=>{const n=projektAusUrl();if(n&&n!==S.quelle.name)ausZentrale(n);});
+
+/* ---------- Startfeld ---------- */
+const K={ordner:{text:'Projektordner öffnen',aktion:()=>ordnerOeffnen()},datei:{text:'Plan-Datei öffnen …',aktion:()=>$('dateiWahl').click()},beispiel:{text:'Beispielgebäude ansehen',aktion:()=>beispielZeigen()}};
+function startZeigen({eyebrow='',titel,text,knoepfe}){
+  $('sEyebrow').hidden=!eyebrow;$('sEyebrow').textContent=eyebrow;$('sTitel').textContent=titel;$('sText').textContent=text;
+  const box=$('sKnoepfe');box.textContent='';
+  for(const k of knoepfe){const el=document.createElement(k.href?'a':'button');el.className='btn'+(k.primary?' primary':'');el.textContent=k.text;if(k.id)el.id=k.id;
+    if(k.href){el.href=k.href;el.target=k.target||'_blank';el.rel='noopener';}else{el.type='button';el.onclick=k.aktion;}box.append(el);}
+  $('start').classList.remove('weg');
+}
+async function beispielZeigen(){
+  if(!S.demo){nutzung='';await projektLaden(beispiel(),'Beispielgebäude',true);}
+  $('start').classList.add('weg');S.kam={yaw:-1.5,pitch:.5,zoom:.62,tx:0,ty:0,tz:mitteZ()};S.ziel={...ganz(),dauer:2.6,t:0,von:{...S.kam}};S.t0=performance.now();S.teilchen=[];
 }
 $('ordner').onclick=$('sOrdner').onclick=ordnerOeffnen;
 $('datei').onclick=$('sDatei').onclick=()=>$('dateiWahl').click();
 $('dateiWahl').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f){nutzung='';dateiLesen(f);}};
-$('sBeispiel').onclick=()=>{$('start').classList.add('weg');S.kam={yaw:-1.5,pitch:.5,zoom:.62,tx:0,ty:0,tz:mitteZ()};S.ziel={...ganz(),dauer:2.6,t:0,von:{...S.kam}};S.t0=performance.now();S.teilchen=[];};
+$('sBeispiel').onclick=()=>beispielZeigen();
 addEventListener('dragover',e=>{e.preventDefault();$('ziehen').classList.add('auf');});
 addEventListener('dragleave',e=>{if(!e.relatedTarget)$('ziehen').classList.remove('auf');});
 addEventListener('drop',e=>{e.preventDefault();$('ziehen').classList.remove('auf');const f=e.dataTransfer.files[0];if(f){nutzung='';dateiLesen(f);}});
@@ -581,7 +1030,7 @@ $('bild').onclick=()=>{
   bild(performance.now());
   const c=document.createElement('canvas');c.width=cv.width;c.height=cv.height;const g=c.getContext('2d');g.drawImage(cv,0,0);
   const fs=13*dpr;g.font=`${fs}px ${SCHRIFT}`;g.fillStyle='rgba(8,18,32,.75)';g.fillRect(0,c.height-fs*2.2,c.width,fs*2.2);g.fillStyle='#dbe8f6';g.textBaseline='middle';
-  g.fillText(`${S.demo?'BEISPIEL – Werte frei erfunden · ':''}${S.name} · Darstellung ${S.massstab?'':'nicht maßstäblich, '}zur Veranschaulichung · Werte laut Prüfbericht · Rauch nur Dekoration · GlasKit / Spektron`,fs,c.height-fs*1.1);
+  g.fillText(`${S.demo?'BEISPIEL – Werte frei erfunden · ':''}${S.name} · Darstellung ${S.massstab?'':'nicht maßstäblich, '}zur Veranschaulichung · Werte laut Prüfbericht · Rauch nur Dekoration · GlasKit ${VERSION} / Spektron`,fs,c.height-fs*1.1);
   c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`GlasKit ${S.name.replace(/[\\/:*?"<>|]/g,'_')||'Ansicht'}.png`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);},'image/png');
 };
 
@@ -610,7 +1059,8 @@ function beispiel(){
 
 /* ================= Start ================= */
 groesse();
-projektLaden(beispiel(),'Beispielgebäude',true).then(()=>requestAnimationFrame(schleife)).catch(e=>melde(e.message));
+{const n=projektAusUrl();if(n)startZeigen({eyebrow:'Aus der Projektzentrale',titel:`Projekt ${n}`,text:'Wird geöffnet …',knoepfe:[]});}
+projektLaden(beispiel(),'Beispielgebäude',true).then(()=>{requestAnimationFrame(schleife);const n=projektAusUrl();if(n)ausZentrale(n);}).catch(e=>melde(e.message));
 </script>
 </body>
 </html>
