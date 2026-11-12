@@ -119,13 +119,13 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
       await schreibe(fo,'IMG_0007.jpg',await jpg(1000,1000,'#6a1b9a','Bohrkern'));
       await schreibe(fk,'_Bildumbenenner.json',JSON.stringify({app:'Bildumbenenner',format:1,version:'2.3.1',projekt:{},benennung:{},reihenfolge:['IMG_0002.jpg','IMG_0001.jpg'],
         bilder:{'IMG_0001.jpg':{beschreibung:'Testfoto: Decke über dem Herd, deutlich verrußt',probe:'P1',abschnitt:'EG Küche'},
-                'IMG_0002.jpg':{beschreibung:'Testfoto: Wand neben dem Fenster',probe:'p 1; P3',drehung:90},
-                'IMG_0003.jpg':{beschreibung:'aussortiert',probe:'P2',aussortiert:true},
+                'IMG_0002.jpg':{beschreibung:'Testfoto: Wand neben dem Fenster',probe:'p 1; P3',drehung:90,abschnitt:'küche'},
+                'IMG_0003.jpg':{beschreibung:'aussortiert',probe:'P2',aussortiert:true,abschnitt:'Küche'},
                 'IMG_0004.HEIC':{beschreibung:'iPhone-Foto',probe:'P3'},
-                'IMG_0005.jpg':{beschreibung:'Großes Foto',probe:'P5'},
+                'IMG_0005.jpg':{beschreibung:'Großes Foto',probe:'P5',abschnitt:'Flur'},
                 'IMG_0006.jpg':{beschreibung:'Datei gibt es nicht',probe:'P9'},
-                'IMG_0007.jpg':{beschreibung:'Bohrkern-Foto',probe:'EG-WZ-B-7'},
-                'IMG_0008.jpg':{beschreibung:'ohne Probe'}}}));
+                'IMG_0007.jpg':{beschreibung:'Bohrkern-Foto',probe:'EG-WZ-B-7',abschnitt:'Kellerraum'},
+                'IMG_0008.jpg':{beschreibung:'ohne Probe',abschnitt:'1. OG  Büro'}}}));
       await schreibe(lk,'26.0560_Daten.json',JSON.stringify({projekt:{nr:'26.0560'},sonstigeProben:[{matrix:'Bohrkern',bkId:'EG-WZ-B-7-T1',_nr:10}]}));
     },PROJ);
     console.log('Testfotos angelegt in '+(Date.now()-t0)+' ms');
@@ -172,6 +172,23 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     // nichts geschrieben: FotoKit-Datei unverändert, keine neuen Dateien in „Fotos“
     const stand=await page.evaluate(async PROJ=>{const r=await navigator.storage.getDirectory(),pj=await (await r.getDirectoryHandle('Mosaik Archivordner')).getDirectoryHandle(PROJ);const n=[];for await(const [x] of (await pj.getDirectoryHandle('Fotos')).entries())n.push(x);return n.sort();},PROJ);
     assert.deepEqual(stand,['IMG_0001.jpg','IMG_0002.jpg','IMG_0003.jpg','IMG_0004.HEIC','IMG_0005.jpg','IMG_0007.jpg']);
+    // --- 1.5.0: Fotowände (Raum / Abschnitt = Raumname der Skizze) und Wischfelder ---
+    await page.goto(url+'#projekt='+encodeURIComponent(PROJ));await page.reload();
+    await page.waitForFunction(n=>S.quelle.art==='ordner'&&S.quelle.name===n&&S.fotos&&S.fotos.status==='ok',PROJ);
+    const fw=await page.evaluate(()=>({fw:S.fotoWand,an:S.fotoAn,knopf:getComputedStyle(document.getElementById('fotoW')).display,
+      wo:S.geschosse.map(g=>g.fotoW.map(p=>p.raum+':'+p.f.name).sort())}));
+    assert.deepEqual(fw.fw,{fotos:4,ohne:1},'zugeordnet: Küche 2 (auch klein geschrieben), Flur 1, „1. OG  Büro“ 1; „Kellerraum“ ohne Raum; aussortiert zählt nicht');
+    assert.deepEqual(fw.wo,[['Flur:IMG_0005.jpg','Küche:IMG_0001.jpg','Küche:IMG_0002.jpg'],['Büro:IMG_0008.jpg'],[]]);
+    assert.equal(fw.an,false,'echtes Projekt: Fotowände erst nach Klick');assert.notEqual(fw.knopf,'none');
+    await page.locator('#dreh').click();await page.locator('#fotoW').click();
+    await page.waitForFunction(()=>S.geschosse[0].fotoW.every(p=>p.f._w&&p.f._w!=='lädt')&&S.geschosse[1].fotoW.every(p=>p.f._w&&p.f._w!=='lädt'),null,{timeout:60000});
+    const geladen=await page.evaluate(()=>S.geschosse.flatMap(g=>g.fotoW.map(p=>p.f.name+'='+(p.f._w instanceof HTMLImageElement?'bild':p.f._w))).sort());
+    assert.deepEqual(geladen,['IMG_0001.jpg=bild','IMG_0002.jpg=bild','IMG_0005.jpg=bild','IMG_0008.jpg=fehler'],'fehlende Datei bleibt ein leeres Feld');
+    await page.waitForTimeout(6500);
+    const feld=await page.evaluate(()=>({treffer:S.treffer.length,tafeln:S.fotoTreffer.length,brand:BRAENDE.length,felder:S.geschosse.flatMap(g=>g.marker).filter(m=>m.kind==='sample'&&feldGeo(m,S.geschosse.find(x=>x.marker.includes(m)),0)).length}));
+    assert.equal(feld.treffer,20,'alle Proben anklickbar');assert.equal(feld.felder,20,'im Beispielplan haben alle Proben eine Oberflächenart → Wischfeld');assert.ok(feld.tafeln>0,'Fototafeln sichtbar');assert.equal(feld.brand,1);
+    await shot('e1-fotowaende-felder');
+    await page.locator('#glas').click();await shot('e2-fotowaende-glas');await page.locator('#modell').click();
     console.log('C ok');
   }
   if(soll('d')){
