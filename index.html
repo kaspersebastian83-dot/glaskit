@@ -73,6 +73,32 @@ canvas.drag{cursor:grabbing}canvas.hit{cursor:pointer}
 #karte dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:8px 0 0}
 #karte dt{color:var(--muted)}#karte dd{margin:0;overflow-wrap:anywhere}
 #karteZu{position:absolute;top:8px;right:8px;border:0;background:none;font-size:18px;color:var(--muted);padding:2px 8px}
+#karte{max-height:calc(100% - 28px);overflow:auto}
+#kFotos{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+#kFotos:empty{display:none}
+#kFotos .titel{font-size:12px;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between}
+#kFotos .gross{display:block;width:100%;height:178px;border:0;padding:0;border-radius:8px;background:#0e1f36;overflow:hidden;cursor:zoom-in}
+#kFotos .gross img{width:100%;height:100%;object-fit:contain;display:block}
+#kFotos .unter{font-size:12.5px;line-height:1.35;margin:5px 0 2px;overflow-wrap:anywhere}
+#kFotos .datei{font-size:11px;color:var(--muted);font-family:var(--mono);overflow-wrap:anywhere}
+#kFotos .streifen{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+#kFotos .streifen button{width:50px;height:50px;padding:0;border:2px solid transparent;border-radius:6px;background:#0e1f36;overflow:hidden}
+#kFotos .streifen button[aria-current=true]{border-color:var(--accent);box-shadow:0 0 0 2px #9cc3ee}
+#kFotos .streifen button[aria-current=false]{opacity:.75}
+#kFotos .streifen img{width:100%;height:100%;object-fit:cover;display:block}
+.fotohinweis{display:flex;align-items:center;justify-content:center;text-align:center;color:#8fb3da;font-size:12px;line-height:1.35;padding:8px;height:100%}
+.streifen .fotohinweis{font-size:9.5px;padding:2px}
+#kFotos .leise{font-size:12px;color:var(--muted);line-height:1.4}
+#licht{position:absolute;inset:0;background:rgba(5,11,20,.92);z-index:7;display:none;flex-direction:column;align-items:center;justify-content:center;padding:56px 70px 14px}
+#licht.auf{display:flex}
+#lichtBild{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+#licht img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+#licht .fotohinweis{width:420px;height:260px;border:1px dashed #49698f;border-radius:10px;font-size:14px}
+#lichtText{color:#dbe8f6;margin-top:10px;font-size:14px;text-align:center;max-width:900px}
+#lichtText small{display:block;color:#8fb3da;font-family:var(--mono);font-size:11.5px;margin-top:3px}
+#licht .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:22px;padding:10px 14px}
+#lichtZur{left:14px}#lichtVor{right:14px}
+#lichtZu{position:absolute;top:12px;right:14px}
 #profil{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
 #profil summary{cursor:pointer;color:var(--accent2);font-size:13px}
 #profil table{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
@@ -110,7 +136,7 @@ canvas.drag{cursor:grabbing}canvas.hit{cursor:pointer}
 <body>
 <header>
   <svg viewBox="44 4 106 101" aria-hidden="true"><g fill="#363A90"><circle cx="93.44" cy="14.19" r="3.15"/><circle cx="117.44" cy="17.06" r="8.1"/><circle cx="75.19" cy="17.94" r="8.1"/><circle cx="94.56" cy="27.06" r="4.18"/><circle cx="130.94" cy="31.94" r="3.15"/><circle cx="60.44" cy="36.94" r="3.15"/><circle cx="119.81" cy="38.81" r="4.18"/><circle cx="71.81" cy="43.06" r="4.18"/><circle cx="102.31" cy="43.81" r="5.78"/><circle cx="139.94" cy="54.19" r="8.1"/><circle cx="54.06" cy="54.69" r="8.1"/><circle cx="86.56" cy="56.44" r="5.78"/><circle cx="103.81" cy="63.94" r="5.78"/><circle cx="121.94" cy="67.44" r="4.18"/><circle cx="74.44" cy="71.06" r="4.18"/><circle cx="133.94" cy="72.19" r="3.15"/><circle cx="62.81" cy="77.06" r="3.15"/><circle cx="99.81" cy="82.56" r="4.18"/><circle cx="119.44" cy="91.44" r="8.1"/><circle cx="75.81" cy="92.19" r="8.1"/><circle cx="99.81" cy="95.56" r="3.15"/></g><g stroke="#363A90"><line x1="93.44" y1="14.19" x2="117.44" y2="17.06" stroke-width="1.4"/><line x1="75.19" y1="17.94" x2="60.44" y2="36.94" stroke-width="1.4"/><line x1="130.94" y1="31.94" x2="139.94" y2="54.19" stroke-width="1.4"/><line x1="54.06" y1="54.69" x2="62.81" y2="77.06" stroke-width="1.4"/><line x1="133.94" y1="72.19" x2="119.44" y2="91.44" stroke-width="1.4"/><line x1="75.81" y1="92.19" x2="99.81" y2="95.56" stroke-width="1.4"/><line x1="94.56" y1="27.06" x2="102.31" y2="43.81" stroke-width="1.17"/><line x1="86.56" y1="56.44" x2="74.44" y2="71.06" stroke-width="1.17"/><line x1="103.81" y1="63.94" x2="121.94" y2="67.44" stroke-width="1.17"/></g></svg>
-  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.2.0</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
+  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.3.0</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
   <div id="projekt"><b id="pName">–</b><span id="pInfo"></span></div>
   <button class="btn primary" id="ordner">Projektordner öffnen</button>
   <button class="btn" id="datei">Plan-Datei öffnen …</button>
@@ -131,8 +157,10 @@ canvas.drag{cursor:grabbing}canvas.hit{cursor:pointer}
     <h2 id="kTitel"></h2><div class="ort" id="kOrt"></div>
     <div class="wert" id="kWert"><b id="kZahl"></b><span id="kStufe"></span></div>
     <dl id="kListe"></dl>
+    <div id="kFotos"></div>
     <details id="profil"><summary>Alle Werte dieser Probe</summary><table id="pTab"></table></details>
   </div>
+  <div id="licht" role="dialog" aria-label="Foto"><button class="chip" id="lichtZu">✕ Schließen</button><button class="chip nav" id="lichtZur" aria-label="Voriges Foto">◀</button><button class="chip nav" id="lichtVor" aria-label="Nächstes Foto">▶</button><div id="lichtBild"></div><div id="lichtText"></div></div>
   <div id="tour"><button class="chip" id="tZur" aria-label="Vorherige Probe">◀</button><button class="chip" id="tPause">⏸ Pause</button><span id="tourText"></span><button class="chip" id="tVor" aria-label="Nächste Probe">▶</button><button class="chip" id="tEnde">Beenden</button></div>
   <div id="fuss">
     <button class="chip haupt" id="rundgang">▶ Rundgang starten</button>
@@ -531,7 +559,7 @@ root.SpektronOrdner = api;
 </script>
 <script>
 'use strict';
-const VERSION='1.2.0';
+const VERSION='1.3.0';
 /* ================= Bewertung: aus PlanKit (src/results.ts) übernommen – dort ändern, hier mitändern ================= */
 const UNRATED='#c3ccd5',BELOW_LIMIT='#749bb5',NOT_DETECTED='#8b83a8',NOT_DETERMINED='#9d8975';
 function labNumber(raw){
@@ -749,7 +777,7 @@ async function projektLaden(p,name,demo=false,quelle={art:demo?'beispiel':'datei
   const ausNutzung=['Wohnen','Büro','Öffentlich','Gesundheit & Labor'].includes(nutzung)?'residential':['Gewerbe/Industrie','Landwirtschaft'].includes(nutzung)?'industrial':undefined;
   const settings=p.results&&typeof p.results==='object'?p.results:ausNutzung?{usage:ausNutzung,parameter:'*',scales:{}}:undefined;
   for(const g of gs)for(const m of g.marker)if(m.kind==='sample')m.b=bewerte(m,settings);
-  S.geschosse=gs;S.name=name;S.demo=demo;S.quelle=quelle;S.offen=Array.isArray(p.pending)?p.pending.length:0;S.massstab=alle;
+  S.geschosse=gs;S.name=name;S.demo=demo;S.quelle=quelle;fotosLeeren();S.offen=Array.isArray(p.pending)?p.pending.length:0;S.massstab=alle;
   S.wahl=null;S.artAus.clear();S.teilchen=[];tourEnde();karteZu();
   S.kam={yaw:-1.5,pitch:.5,zoom:.62,tx:0,ty:0,tz:mitteZ()};S.ziel={...ganz(),dauer:2.6,t:0,von:{...S.kam}};S.t0=performance.now();
   seiteFuellen();kopfFuellen();$('beispiel').classList.toggle('auf',demo);
@@ -828,6 +856,7 @@ async function projektOrdnerLesen(dir){
   await nutzungLesen(dir);
   const ok=await dateiLesen(plan.f,dir.name,{art:'ordner',dir,planPfad:plan.pfad});
   if(ok&&istProjekt(dir.name))projektInUrl(dir.name);
+  if(ok)fotosLaden(dir);   // im Hintergrund – das Gebäude steht schon
   return ok;
 }
 async function ordnerOeffnen(){
@@ -889,6 +918,118 @@ $('sBeispiel').onclick=()=>beispielZeigen();
 addEventListener('dragover',e=>{e.preventDefault();$('ziehen').classList.add('auf');});
 addEventListener('dragleave',e=>{if(!e.relatedTarget)$('ziehen').classList.remove('auf');});
 addEventListener('drop',e=>{e.preventDefault();$('ziehen').classList.remove('auf');const f=e.dataTransfer.files[0];if(f){nutzung='';dateiLesen(f);}});
+
+
+/* ================= Fotos aus FotoKit (nur lesen) =================
+   FotoKit speichert in „_Bildumbenenner.json“ (Ort nach spektron-ordner.js: „_Spektron/FotoKit“, früher „Fotos“) je Foto
+   bilder[<Dateiname>] = { beschreibung, abschnitt, probe: „P1“ / „P1, P3“, drehung: 90|180|270 (im Uhrzeigersinn), aussortiert: true, … }.
+   Die Fotos selbst liegen im Projektordner unter „Fotos/<Dateiname>“. Gleiche Regel wie PlanKits „Anlage Probenahme“ (annex-run.ts):
+   aussortierte und Fotos ohne Probe-Nr. zählen nicht, Reihenfolge wie in FotoKit, Probe-Nr. wie photoLabels() (P1, p 2, Probe 3;
+   Bohrkern-IDs über die LabelKit-Datei des Projekts). Bilder werden erst beim Anzeigen gelesen und verkleinert. */
+const FOTOKIT_DATEI='_Bildumbenenner.json';
+/** „P1, p 2; Probe 3“ → ['P1','P2','P3'] – wie PlanKit (annex.ts photoLabels) und FotoKit (fotoProben). */
+function fotoProben(t,bk){
+  const one=x=>{const m=/^(?:p|probe)?\s*-?\s*0*(\d+)\s*([a-z]?)$/i.exec(x);return m?`P${m[1]}${m[2].toLowerCase()}`:x.toUpperCase();};
+  return [...new Set(String(t||'').split(/[,;/]+/).map(x=>x.trim()).filter(Boolean).flatMap(x=>{const p=one(x);return (!/^P\d+[a-z]?$/.test(p)&&bk&&bk.get(p))||[p];}))];
+}
+/** Bohrkerne aus der LabelKit-Projektdatei: Kern-ID → alle analysierten Segmente (wie PlanKit bohrkernNummern). */
+function bohrkernNummern(daten){
+  const map=new Map(),liste=daten&&daten.sonstigeProben;
+  const add=(k,pn)=>{const key=String(k??'').trim().toUpperCase();if(!key)return;const l=map.get(key)||[];if(!l.includes(pn))l.push(pn);map.set(key,l);};
+  for(const p of Array.isArray(liste)?liste:[]){
+    if(!p||typeof p!=='object'||p.matrix!=='Bohrkern')continue;
+    if(String(p.bkStatus??'').trim().toUpperCase()==='R'||String(p.notiz??'').trim()==='Rückstellprobe – nicht analysieren')continue;
+    const n=[p._nr,p.chloridNr,p.id].map(Number).find(v=>Number.isSafeInteger(v)&&v>0&&v<1e9);if(!n)continue;
+    const id=String(p.bkId??'').trim();add(id,`P${n}`);add(id.replace(/-T\d+$/i,''),`P${n}`);add(p.bkBez,`P${n}`);
+  }
+  return map;
+}
+async function ordnerFinden(dir,name){try{return await dir.getDirectoryHandle(name);}catch{/* andere Schreibweise? */}const w=name.normalize('NFC').toLowerCase();try{for await(const h of dir.values())if(h.kind==='directory'&&h.name.normalize('NFC').toLowerCase()===w)return h;}catch{}return null;}
+const FOTO_URLS=new Set();
+function fotosLeeren(){S.fotos=null;for(const u of FOTO_URLS)URL.revokeObjectURL(u);FOTO_URLS.clear();VORSCHAU.clear();lichtZu();}
+async function fotosLaden(dir){
+  const quelle=S.quelle,res={status:'keine',map:new Map(),dir:null,pfad:'',fehler:'',anzahl:0};
+  try{
+    const fotos=await ordnerFinden(dir,'Fotos'),fk=await bereich(dir,'fotokit');
+    const fkDir=fk&&fk.wo==='neu'?fk.dir:fotos;res.pfad=`${fk&&fk.wo==='neu'?fk.pfad:'Fotos'}/${FOTOKIT_DATEI}`;res.dir=fotos;
+    let datei=null;if(fkDir){try{datei=await (await fkDir.getFileHandle(FOTOKIT_DATEI)).getFile();}catch{/* noch keine FotoKit-Datei */}}
+    if(datei){
+      let daten;try{daten=JSON.parse(await datei.text());}catch{throw Error(`„${res.pfad}“ ist nicht lesbar.`);}
+      let bk=null;try{const lk=await bereich(dir,'labelkit');if(lk&&lk.dir&&SO){const w=await SO.labelkitWahl(lk.dir,dir.name);if(w.datei)bk=bohrkernNummern(JSON.parse(w.datei.text));}}catch{/* ohne Bohrkern-Zuordnung */}
+      const rang=new Map((Array.isArray(daten.reihenfolge)?daten.reihenfolge:[]).map((n,i)=>[n,i])),bilder=daten&&typeof daten.bilder==='object'&&daten.bilder?daten.bilder:{};
+      const eintraege=Object.entries(bilder).filter(([,v])=>v&&typeof v==='object'&&!v.aussortiert&&String(v.probe||'').trim())
+        .sort(([a],[b])=>(rang.get(a)??1e9)-(rang.get(b)??1e9)||a.localeCompare(b,'de',{numeric:true}));
+      for(const [name,v] of eintraege){const f={name,text:String(v.beschreibung||'').trim(),abschnitt:String(v.abschnitt||'').trim(),probe:String(v.probe).trim(),drehung:Number(v.drehung)||0};
+        for(const l of fotoProben(f.probe,bk)){if(!res.map.has(l))res.map.set(l,[]);res.map.get(l).push(f);}res.anzahl++;}
+      res.status=fotos?'ok':'ohneOrdner';
+    }
+  }catch(e){res.status='fehler';res.fehler=e&&e.message||String(e);}
+  if(S.quelle!==quelle)return;   // inzwischen ein anderes Projekt
+  S.fotos=res;if(S.wahl)fotosZeigen(S.wahl);
+}
+const fotosVon=m=>S.fotos&&S.fotos.status==='ok'?S.fotos.map.get(m.label)||[]:[];
+/* --- Bilder lesen: nacheinander (Fotos können 48 MP haben), verkleinert, EXIF-Ausrichtung + FotoKit-Drehung, als JPEG im Speicher --- */
+const VORSCHAU=new Map(),KARTE_PX=720;let fotoKette=Promise.resolve();   // Karte: 720 px (scharf auch bei doppelter Pixeldichte), Großansicht: bis 2400 px
+const istHeic=n=>/\.(heic|heif)$/i.test(n);
+function fotoBild(f,lang){
+  const key=`${f.name}|${lang}`;if(VORSCHAU.has(key))return VORSCHAU.get(key);
+  const fotos=S.fotos;
+  const p=fotoKette=fotoKette.catch(()=>{}).then(async()=>{
+    if(S.fotos!==fotos)return {fehler:'weg'};
+    let file;try{file=await (await fotos.dir.getFileHandle(f.name)).getFile();}catch{return {fehler:'fehlt'};}
+    let bmp;try{bmp=await createImageBitmap(file,{imageOrientation:'from-image',resizeWidth:lang,resizeQuality:'high'});}
+    catch{return {fehler:istHeic(f.name)?'heic':'format'};}
+    try{
+      const s=Math.min(1,lang/Math.max(bmp.width,bmp.height)),w=Math.max(1,Math.round(bmp.width*s)),h=Math.max(1,Math.round(bmp.height*s)),turn=((Math.round(f.drehung/90)%4)+4)%4;
+      const c=document.createElement('canvas');c.width=turn%2?h:w;c.height=turn%2?w:h;const g=c.getContext('2d');g.imageSmoothingQuality='high';
+      g.translate(c.width/2,c.height/2);g.rotate(turn*Math.PI/2);g.drawImage(bmp,-w/2,-h/2,w,h);
+      const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.86));c.width=c.height=0;if(!blob)return {fehler:'format'};
+      const url=URL.createObjectURL(blob);FOTO_URLS.add(url);return {url,b:turn%2?h:w,h:turn%2?w:h};
+    }finally{bmp.close&&bmp.close();}
+  });
+  VORSCHAU.set(key,p);
+  if(lang>1000){const gross=[...VORSCHAU.keys()].filter(k=>!k.endsWith('|'+KARTE_PX));while(gross.length>3){const k=gross.shift();VORSCHAU.get(k).then(r=>{if(r&&r.url){URL.revokeObjectURL(r.url);FOTO_URLS.delete(r.url);}});VORSCHAU.delete(k);}}
+  return p;
+}
+const HINWEIS={heic:'iPhone-Foto (HEIC) – kann der Browser hier nicht zeigen. In FotoKit in JPG umwandeln.',fehlt:'Datei fehlt im Ordner „Fotos“.',format:'Dieses Bildformat kann der Browser hier nicht zeigen.',weg:''};
+const HINWEIS_KURZ={heic:'HEIC',fehlt:'fehlt',format:'?',weg:''};
+function bildIn(el,f,lang,kurz){
+  el.textContent='';const ph=document.createElement('div');ph.className='fotohinweis';ph.textContent=kurz?'…':'Wird geladen …';el.append(ph);
+  fotoBild(f,lang).then(r=>{if(!el.isConnected)return;el.textContent='';
+    if(r.url){const i=document.createElement('img');i.src=r.url;i.alt=f.text||f.name;i.dataset.b=r.b;i.dataset.h=r.h;el.append(i);}
+    else{const d=document.createElement('div');d.className='fotohinweis';d.textContent=(kurz?HINWEIS_KURZ:HINWEIS)[r.fehler]||'';d.title=HINWEIS[r.fehler]||'';el.append(d);}});
+}
+/** Fotos in der Probenkarte: großes Bild, Beschreibung aus FotoKit, darunter alle Fotos der Probe als Streifen. */
+function fotosZeigen(m,nr=0){
+  const box=$('kFotos');box.textContent='';const leise=t=>{const p=document.createElement('div');p.className='leise';p.textContent=t;box.append(p);};
+  if(S.quelle.art==='datei'){leise('Fotos aus FotoKit zeigt GlasKit, wenn das Projekt als Ordner geöffnet ist – aus der Projektzentrale („GlasKit öffnen“) oder mit „Projektordner öffnen“. Eine einzelne Plan-Datei reicht dafür nicht.');return;}
+  if(S.quelle.art!=='ordner')return;
+  if(!S.fotos){leise('Fotos aus FotoKit werden gelesen …');return;}
+  if(S.fotos.status==='fehler'){leise(S.fotos.fehler);return;}
+  if(S.fotos.status==='keine'){leise('In diesem Projekt gibt es noch keine Fotos mit Probe-Nr. aus FotoKit.');return;}
+  if(S.fotos.status==='ohneOrdner'){leise('FotoKit kennt Fotos, aber der Ordner „Fotos“ fehlt im Projekt.');return;}
+  const liste=fotosVon(m);if(!liste.length){leise('Kein Foto mit dieser Probe-Nr. in FotoKit.');return;}
+  nr=Math.max(0,Math.min(liste.length-1,nr));const f=liste[nr];
+  const t=document.createElement('div');t.className='titel';const a=document.createElement('span');a.textContent=liste.length===1?'Foto aus FotoKit':`Fotos aus FotoKit (${liste.length})`;const z=document.createElement('span');z.textContent=liste.length>1?`${nr+1} / ${liste.length}`:'';t.append(a,z);box.append(t);
+  const gross=document.createElement('button');gross.className='gross';gross.type='button';gross.title='Groß ansehen';gross.onclick=()=>lichtAuf(m,nr);bildIn(gross,f,KARTE_PX,false);box.append(gross);
+  const u=document.createElement('div');u.className='unter';u.textContent=f.text||'(ohne Beschreibung in FotoKit)';if(!f.text)u.style.color='var(--muted)';box.append(u);
+  const d=document.createElement('div');d.className='datei';d.textContent=[f.name,f.probe!==m.label?`Probe-Nr. in FotoKit: ${f.probe}`:''].filter(Boolean).join(' · ');box.append(d);
+  if(liste.length>1){const st=document.createElement('div');st.className='streifen';
+    liste.forEach((x,i)=>{const b=document.createElement('button');b.type='button';b.title=x.text||x.name;b.setAttribute('aria-current',i===nr);b.onclick=()=>fotosZeigen(m,i);bildIn(b,x,KARTE_PX,true);st.append(b);});box.append(st);}
+}
+/* --- Großansicht --- */
+let LICHT=null;
+function lichtAuf(m,nr){const liste=fotosVon(m);if(!liste.length)return;if(S.tour&&!S.tour.pause)tourPause();LICHT={m,nr:(nr+liste.length)%liste.length};
+  const f=liste[LICHT.nr],el=$('lichtBild');bildIn(el,f,Math.min(2400,Math.round(Math.max(innerWidth,innerHeight)*Math.min(2,devicePixelRatio||1))),false);
+  const t=$('lichtText');t.textContent=f.text||'(ohne Beschreibung in FotoKit)';const sm=document.createElement('small');sm.textContent=`Probe ${m.label} · ${f.name}${liste.length>1?` · ${LICHT.nr+1} / ${liste.length}`:''}`;t.append(sm);
+  $('lichtZur').style.display=$('lichtVor').style.display=liste.length>1?'':'none';$('licht').classList.add('auf');}
+function lichtZu(){LICHT=null;const l=document.getElementById('licht');if(l)l.classList.remove('auf');}
+$('lichtZu').onclick=lichtZu;$('lichtVor').onclick=()=>LICHT&&lichtAuf(LICHT.m,LICHT.nr+1);$('lichtZur').onclick=()=>LICHT&&lichtAuf(LICHT.m,LICHT.nr-1);
+$('licht').onclick=e=>{if(e.target===$('licht'))lichtZu();};
+/** Kleines Kamera-Zeichen neben der Probenbezeichnung: zu dieser Probe gibt es Fotos. */
+function kamera(x,y){cx.save();cx.translate(x,y);cx.lineWidth=3;cx.strokeStyle='rgba(6,14,26,.85)';cx.fillStyle='#fff';
+  const form=()=>{cx.beginPath();cx.rect(-6.5,-3.5,13,9);cx.rect(-2.5,-6,5,2.5);};form();cx.stroke();form();cx.fill();
+  cx.beginPath();cx.arc(0,1,2.6,0,7);cx.fillStyle='#21303e';cx.fill();cx.restore();}
 
 /* ================= Projektion (Parallelprojektion – Pläne bleiben exakt, läuft ohne WebGL) ================= */
 let dpr=1,bw=0,bh=0;
@@ -954,6 +1095,7 @@ function kugel(m,g,z,jetzt,ein){
   // Beschriftung
   cx.font='600 12.5px '+SCHRIFT;cx.textAlign='left';cx.textBaseline='middle';const text=S.werte&&b.text?`${m.label}  ${b.text}`:m.label;
   cx.lineWidth=3.5;cx.strokeStyle='rgba(6,14,26,.85)';cx.strokeText(text,kopf.x+r+6,kopf.y);cx.fillStyle='#fff';cx.fillText(text,kopf.x+r+6,kopf.y);
+  if(fotosVon(m).length)kamera(kopf.x+r+6+cx.measureText(text).width+12,kopf.y);
   S.treffer.push({m,g,x:kopf.x,y:kopf.y,r:r+5});
 }
 function brand(m,g,z,jetzt){
@@ -1070,6 +1212,7 @@ cv.addEventListener('wheel',e=>{e.preventDefault();S.ziel=null;S.bewegt=performa
 addEventListener('keydown',e=>{
   if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)&&e.target.type!=='range')return;
   const k=S.kam;S.bewegt=performance.now();
+  if(LICHT){if(e.key==='Escape')lichtZu();else if(e.key==='ArrowLeft')lichtAuf(LICHT.m,LICHT.nr-1);else if(e.key==='ArrowRight')lichtAuf(LICHT.m,LICHT.nr+1);return;}
   if(e.key==='Escape'){S.tour?tourEnde():karteZu();}
   else if(e.key===' '&&S.tour){e.preventDefault();tourPause();}
   else if(e.key==='ArrowLeft'){S.tour?tourGeh(-1):(k.yaw+=.12);}
@@ -1094,17 +1237,18 @@ function waehle(m,g,flug){
     const v=labNumber(w.r);if(mx>0&&w.u===einheit&&!SUMME.test(w.p.trim())&&Number.isFinite(v)&&labQualifier(w.r)==='measured'){const s=document.createElement('i');s.style.width=Math.max(1,v/mx*100)+'%';d.append(s);}
     tr.append(a,c,d);tab.append(tr);}
   $('profil').style.display=b.werte.length>1?'':'none';$('profil').open=false;
+  fotosZeigen(m);
   $('karte').classList.remove('auf');void $('karte').offsetWidth;$('karte').classList.add('auf');
   if(flug){const w=markerWelt(g,m);fliege({tx:w.x,ty:w.y,tz:i*H()+H()*.45,zoom:Math.max(S.kam.zoom,1.9)},1.1);}
 }
-function karteZu(){S.wahl=null;$('karte').classList.remove('auf');}
+function karteZu(){S.wahl=null;$('karte').classList.remove('auf');lichtZu();}
 $('karteZu').onclick=()=>{S.tour?tourEnde():karteZu();};
 
 /* ---------- Rundgang ---------- */
 function tourStopps(){const out=[];S.geschosse.forEach((g,i)=>{if(!g.sichtbar)return;g.marker.filter(m=>m.kind==='sample'&&!S.artAus.has(typVon(m)||'ohne Angabe')).sort((a,b)=>a.label.localeCompare(b.label,'de',{numeric:true})).forEach(m=>out.push({m,g,i}));});return out;}
 function tourStart(){const st=tourStopps();if(!st.length){melde('Für einen Rundgang braucht es mindestens eine gesetzte Probe.');return;}S.tour={st,i:-1,rest:0,pause:false};$('tour').classList.add('auf');$('rundgang').textContent='■ Rundgang beenden';tourGeh(1);}
 function tourGeh(d){const T=S.tour;if(!T)return;T.i+=d;if(T.i>=T.st.length){tourEnde();return;}if(T.i<0)T.i=0;const s=T.st[T.i],w=markerWelt(s.g,s.m);
-  waehle(s.m,s.g,false);fliege({tx:w.x,ty:w.y,tz:s.i*H()+H()*.45,zoom:1.75,yaw:S.kam.yaw-.55,pitch:.52},1.6);T.rest=5.2;$('tourText').textContent=`${T.i+1} von ${T.st.length} · ${s.g.name}`;}
+  waehle(s.m,s.g,false);fliege({tx:w.x,ty:w.y,tz:s.i*H()+H()*.45,zoom:1.75,yaw:S.kam.yaw-.55,pitch:.52},1.6);T.rest=fotosVon(s.m).length?7:5.2;$('tourText').textContent=`${T.i+1} von ${T.st.length} · ${s.g.name}`;}
 function tourSchritt(dt){const T=S.tour;if(!T||T.pause)return;if(!S.ziel)S.kam.yaw-=dt*.05;T.rest-=dt;if(T.rest<=0)tourGeh(1);}
 function tourPause(){const T=S.tour;if(!T)return;T.pause=!T.pause;$('tPause').textContent=T.pause?'▶ Weiter':'⏸ Pause';}
 function tourEnde(){if(!S.tour)return;S.tour=null;$('tour').classList.remove('auf');$('tPause').textContent='⏸ Pause';$('rundgang').textContent='▶ Rundgang starten';karteZu();fliege(ganz(),1.8);}

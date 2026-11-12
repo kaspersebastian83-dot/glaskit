@@ -6,7 +6,7 @@ GlasKit liest eine PlanKit-Datei (`*.probenplan`) **nur lesend** und zeigt die G
 
 ![Vorschau](docs/vorschau.png)
 
-Aktuelle Version: **1.2.0** (steht oben neben dem Namen).
+Aktuelle Version: **1.3.0** (steht oben neben dem Namen).
 
 ## Benutzen
 
@@ -17,7 +17,8 @@ Oder `index.html` in Edge oder Chrome öffnen (oder über GitHub Pages) → „P
 - Ziehen = drehen · Umschalt + Ziehen = verschieben · Mausrad = Zoom
 - Klick auf eine Probe: Karte mit dem Wert wie im Prüfbericht, Geschosse darüber werden durchsichtig
 - **Wände** (nur bei Plänen, die in PlanKit als Skizze gezeichnet sind): Wände als Glas bis knapp unter das nächste Geschoss, Türen offen (mit Sturz), Fenster mit Brüstung und Glasscheibe, der Brandraum vom Boden her warm angeleuchtet. Schalter „Wände“ unten. PDF- und Bildpläne bleiben flache Platten.
-- „Rundgang“: Kamerafahrt von Probe zu Probe (Leertaste = Pause, Pfeiltasten, Esc)
+- **Fotos aus FotoKit** in der Probenkarte (nur wenn das Projekt als Ordner geöffnet ist): großes Bild mit FotoKits Beschreibung, darunter alle Fotos der Probe; Klick = Großansicht (Pfeiltasten, Esc). Aussortierte Fotos fehlen, Drehung wie in FotoKit, HEIC-Fotos bekommen einen ruhigen Hinweis. Proben mit Fotos tragen ein kleines Kamera-Zeichen.
+- „Rundgang“: Kamerafahrt von Probe zu Probe, das Foto erscheint mit der Karte (Leertaste = Pause, Pfeiltasten, Esc)
 - „Bild speichern“: PNG der aktuellen Ansicht als Download
 
 ## Grundsätze
@@ -31,6 +32,10 @@ Oder `index.html` in Edge oder Chrome öffnen (oder über GitHub Pages) → „P
 ## Wände aus der Skizze
 
 `plan.sketch` (PlanKit `src/sketch.ts`, cm): Raumrechtecke und freie Wände; gemeinsame Kanten benachbarter Räume werden zu einer Wand zusammengelegt, Türen/Fenster schneiden sie (gleiche Lage-Regel wie PlanKit: parallel, auf der Linie). Höhen als Anteil des Geschossabstands (Wand 0,94 · Sturz 0,72 · Brüstung 0,30), daher passen Proben (Decke 0,9) immer unter die Wandkrone. Wände und Proben werden gemeinsam von hinten nach vorn gezeichnet (Wände dafür in Stücke ≤ 0,45 Welteinheiten geteilt). Passt die Skizze nicht zur Plangröße oder ist der Plan gedreht/zugeschnitten, bleibt er flach.
+
+## Fotos (FotoKit)
+
+`_Bildumbenenner.json` am Ort nach `spektron-ordner.js` (`_Spektron/FotoKit`, früher `Fotos/`): `bilder[<Dateiname>] = {beschreibung, abschnitt, probe, drehung, aussortiert, …}` – die Bilder selbst liegen in `Fotos/<Dateiname>`. Gleiche Regel wie PlanKits „Anlage Probenahme“ (`annex-run.ts`): aussortierte und Fotos ohne Probe-Nr. zählen nicht, Reihenfolge `reihenfolge`, Probe-Nr. wie `photoLabels()` („P1, p 2; Probe 3“, Bohrkern-IDs über die LabelKit-Datei des Projekts). Bilder werden erst beim Öffnen der Karte gelesen, nacheinander, mit EXIF-Ausrichtung und FotoKit-Drehung auf 720 px (Karte) bzw. bis 2400 px (Großansicht) verkleinert und nur im Speicher gehalten.
 
 ## Projektübergabe (`#projekt=`)
 

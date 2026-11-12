@@ -101,6 +101,79 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     assert.equal(await page.evaluate(()=>{const p=beispiel();p.plan.width=999;return skizzeLesen(p.plan);}),null);
     console.log('B ok');
   }
+  if(soll('c')){
+    // Erfundene Fotos im Projekt: „Fotos/“ + FotoKit-Datei am neuen Ort „_Spektron/FotoKit“, LabelKit-Datei mit einem Bohrkern
+    const t0=Date.now();
+    await page.goto(url);await page.waitForFunction(()=>typeof S!=='undefined'&&S.geschosse.length===3);
+    await page.evaluate(async PROJ=>{
+      const r=await navigator.storage.getDirectory(),a=await r.getDirectoryHandle('Mosaik Archivordner'),pj=await a.getDirectoryHandle(PROJ),sp=await pj.getDirectoryHandle('_Spektron');
+      const fo=await pj.getDirectoryHandle('Fotos',{create:true}),fk=await sp.getDirectoryHandle('FotoKit',{create:true}),lk=await sp.getDirectoryHandle('LabelKit',{create:true});
+      const schreibe=async(d,n,t)=>{const w=await (await d.getFileHandle(n,{create:true})).createWritable();await w.write(t);await w.close();};
+      const jpg=async(w,h,farbe,text)=>{const c=new OffscreenCanvas(w,h),g=c.getContext('2d');g.fillStyle=farbe;g.fillRect(0,0,w,h);g.fillStyle='#fff';g.font=`bold ${Math.round(h/7)}px sans-serif`;g.textAlign='center';g.fillText(text,w/2,h/2);
+        g.beginPath();g.moveTo(w/2,h*.62);g.lineTo(w/2-h*.08,h*.8);g.lineTo(w/2+h*.08,h*.8);g.fill();g.fillText('OBEN',w/2,h*.16);return await c.convertToBlob({type:'image/jpeg',quality:.8});};
+      await schreibe(fo,'IMG_0001.jpg',await jpg(1600,1000,'#8a3f10','P1 Decke'));
+      await schreibe(fo,'IMG_0002.jpg',await jpg(1200,900,'#3f7cc0','P1+P3 gedreht'));
+      await schreibe(fo,'IMG_0003.jpg',await jpg(800,600,'#555','aussortiert'));
+      await schreibe(fo,'IMG_0004.HEIC',new Uint8Array([0,0,0,24,102,116,121,112,104,101,105,99,0,0,0,0]));
+      await schreibe(fo,'IMG_0005.jpg',await jpg(8000,6000,'#2e7d32','48 MP'));
+      await schreibe(fo,'IMG_0007.jpg',await jpg(1000,1000,'#6a1b9a','Bohrkern'));
+      await schreibe(fk,'_Bildumbenenner.json',JSON.stringify({app:'Bildumbenenner',format:1,version:'2.3.1',projekt:{},benennung:{},reihenfolge:['IMG_0002.jpg','IMG_0001.jpg'],
+        bilder:{'IMG_0001.jpg':{beschreibung:'Testfoto: Decke über dem Herd, deutlich verrußt',probe:'P1',abschnitt:'EG Küche'},
+                'IMG_0002.jpg':{beschreibung:'Testfoto: Wand neben dem Fenster',probe:'p 1; P3',drehung:90},
+                'IMG_0003.jpg':{beschreibung:'aussortiert',probe:'P2',aussortiert:true},
+                'IMG_0004.HEIC':{beschreibung:'iPhone-Foto',probe:'P3'},
+                'IMG_0005.jpg':{beschreibung:'Großes Foto',probe:'P5'},
+                'IMG_0006.jpg':{beschreibung:'Datei gibt es nicht',probe:'P9'},
+                'IMG_0007.jpg':{beschreibung:'Bohrkern-Foto',probe:'EG-WZ-B-7'},
+                'IMG_0008.jpg':{beschreibung:'ohne Probe'}}}));
+      await schreibe(lk,'26.0560_Daten.json',JSON.stringify({projekt:{nr:'26.0560'},sonstigeProben:[{matrix:'Bohrkern',bkId:'EG-WZ-B-7-T1',_nr:10}]}));
+    },PROJ);
+    console.log('Testfotos angelegt in '+(Date.now()-t0)+' ms');
+    await page.goto(url+'#projekt='+encodeURIComponent(PROJ));
+    await page.waitForFunction(()=>S.quelle.art==='ordner'&&S.fotos&&S.fotos.status==='ok');
+    const karte=await page.evaluate(()=>Object.fromEntries([...S.fotos.map].map(([k,v])=>[k,v.map(f=>f.name)])));
+    assert.deepEqual(karte,{P1:['IMG_0002.jpg','IMG_0001.jpg'],P3:['IMG_0002.jpg','IMG_0004.HEIC'],P5:['IMG_0005.jpg'],P9:['IMG_0006.jpg'],P10:['IMG_0007.jpg']},'aussortiert/ohne Probe fehlen, Reihenfolge wie FotoKit, Bohrkern → P10');
+    const waehle=async l=>{await page.evaluate(l=>{S.dreh=false;const g=S.geschosse.find(g=>g.marker.some(m=>m.label===l)),m=g.marker.find(m=>m.label===l);waehle(m,g,true);},l);};
+    // P1: zwei Fotos, das erste (IMG_0002) um 90° gedreht → hochkant
+    await waehle('P1');await page.locator('#kFotos .gross img').waitFor();
+    assert.match(await page.locator('#kFotos .titel').textContent(),/Fotos aus FotoKit \(2\)/);
+    assert.equal(await page.locator('#kFotos .unter').textContent(),'Testfoto: Wand neben dem Fenster');
+    const d=await page.locator('#kFotos .gross img').evaluate(i=>[i.naturalWidth,i.naturalHeight]);assert.ok(d[1]>d[0],'gedreht → hochkant '+d);
+    assert.equal(await page.locator('#kFotos .streifen button').count(),2);
+    await page.waitForTimeout(1500);await shot('c1-karte-mit-fotos');
+    await page.locator('#kFotos .streifen button').nth(1).click();await page.locator('#kFotos .gross img').waitFor();
+    assert.equal(await page.locator('#kFotos .unter').textContent(),'Testfoto: Decke über dem Herd, deutlich verrußt');
+    await page.locator('#kFotos .gross').click();await page.locator('#licht.auf img').waitFor();
+    assert.match(await page.locator('#lichtText').textContent(),/Decke über dem Herd[\s\S]*Probe P1 · IMG_0001\.jpg · 2 \/ 2/);
+    await shot('c2-grossansicht');
+    await page.keyboard.press('ArrowRight');await page.waitForFunction(()=>/1 \/ 2/.test(document.getElementById('lichtText').textContent));
+    await page.keyboard.press('Escape');assert.equal(await page.locator('#licht.auf').count(),0);assert.ok(await page.locator('#karte.auf').count(),'Karte bleibt');
+    // P3: HEIC → ruhiger Hinweis statt kaputtem Bild
+    await waehle('P3');await page.locator('#kFotos .streifen button').nth(1).click();
+    await page.locator('#kFotos .gross .fotohinweis').filter({hasText:'HEIC'}).waitFor();assert.equal(await page.locator('#kFotos img[src=""]').count(),0);
+    await shot('c3-heic-hinweis');
+    // P5: 48 MP → verkleinert
+    const t1=Date.now();await waehle('P5');await page.locator('#kFotos .gross img').waitFor({timeout:60000});
+    const g5=await page.locator('#kFotos .gross img').evaluate(i=>[i.naturalWidth,i.naturalHeight]);assert.ok(Math.max(...g5)<=720,'verkleinert '+g5);
+    console.log(`48-MP-Foto in der Karte nach ${Date.now()-t1} ms, ${g5.join('×')} px`);
+    // P9: Datei fehlt · P10: Bohrkern · P2: aussortiert → keine Fotos · Kamera-Zeichen nur bei Proben mit Fotos
+    await waehle('P9');await page.locator('#kFotos .fotohinweis').filter({hasText:'Datei fehlt'}).waitFor();
+    await waehle('P10');await page.locator('#kFotos .gross img').waitFor();assert.match(await page.locator('#kFotos .datei').textContent(),/Probe-Nr\. in FotoKit: EG-WZ-B-7/);
+    await waehle('P2');assert.equal(await page.locator('#kFotos .leise').textContent(),'Kein Foto mit dieser Probe-Nr. in FotoKit.');
+    assert.deepEqual(await page.evaluate(()=>S.geschosse.flatMap(g=>g.marker).filter(m=>m.kind==='sample'&&fotosVon(m).length).map(m=>m.label).sort()),['P1','P10','P3','P5','P9']);
+    // Rundgang: Foto kommt mit der Karte
+    await page.evaluate(()=>{karteZu();tourStart();});await page.locator('#kFotos .gross img').waitFor();
+    assert.equal(await page.locator('#kTitel').textContent(),'Probe P1');await page.waitForTimeout(1800);await shot('c4-rundgang-mit-foto');
+    await page.evaluate(()=>tourEnde());
+    // einzelne Plan-Datei: Hinweis in der Karte
+    await page.evaluate(async()=>{await dateiLesen(new File([JSON.stringify(beispiel())],'Probenplan Test.probenplan'));});
+    await waehle('P1');assert.match(await page.locator('#kFotos .leise').textContent(),/wenn das Projekt als Ordner geöffnet ist/);
+    await shot('c5-nur-datei');
+    // nichts geschrieben: FotoKit-Datei unverändert, keine neuen Dateien in „Fotos“
+    const stand=await page.evaluate(async PROJ=>{const r=await navigator.storage.getDirectory(),pj=await (await r.getDirectoryHandle('Mosaik Archivordner')).getDirectoryHandle(PROJ);const n=[];for await(const [x] of (await pj.getDirectoryHandle('Fotos')).entries())n.push(x);return n.sort();},PROJ);
+    assert.deepEqual(stand,['IMG_0001.jpg','IMG_0002.jpg','IMG_0003.jpg','IMG_0004.HEIC','IMG_0005.jpg','IMG_0007.jpg']);
+    console.log('C ok');
+  }
   assert.deepEqual(fehler,[]);
   await browser.close();server.close();console.log('OK',welche);
 })().catch(e=>{console.error(e);process.exit(1);});
