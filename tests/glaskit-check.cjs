@@ -1,4 +1,4 @@
-// GlasKit – Prüfung im echten Browser mit erfundenen Daten (keine Kundendaten): node tests/glaskit-check.cjs [a|b|c|alle]
+// GlasKit – Prüfung im echten Browser mit erfundenen Daten (keine Kundendaten): node tests/glaskit-check.cjs [a|b|c|d|alle]
 // Braucht Playwright (z. B. NODE_PATH auf ein node_modules mit „playwright“). Legt im privaten Dateisystem des Browsers (OPFS)
 // einen Archivordner mit erfundenen Projekten an, merkt ihn wie die Projektzentrale in IndexedDB „mosaik-suite“ und öffnet
 // GlasKit mit #projekt=… . Bildschirmfotos landen in tests/out/.
@@ -173,6 +173,64 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     const stand=await page.evaluate(async PROJ=>{const r=await navigator.storage.getDirectory(),pj=await (await r.getDirectoryHandle('Mosaik Archivordner')).getDirectoryHandle(PROJ);const n=[];for await(const [x] of (await pj.getDirectoryHandle('Fotos')).entries())n.push(x);return n.sort();},PROJ);
     assert.deepEqual(stand,['IMG_0001.jpg','IMG_0002.jpg','IMG_0003.jpg','IMG_0004.HEIC','IMG_0005.jpg','IMG_0007.jpg']);
     console.log('C ok');
+  }
+  if(soll('d')){
+    // Darstellung: Modell (Standard) · Glas · Papier – je eine Prüfung, Bildschirmfotos aller drei, dazu eine gewählte Probe im Modell
+    await page.goto(url);await page.evaluate(()=>{try{localStorage.removeItem('glaskit-stil');}catch{}});
+    const laden=async()=>{await page.goto(url);await page.waitForFunction(()=>typeof S!=='undefined'&&S.geschosse.length===3);await page.locator('#sBeispiel').click();
+      await page.evaluate(()=>{S.dreh=false;});await page.waitForTimeout(5200);};
+    const zustand=()=>page.evaluate(()=>({stil:S.stil,glas:S.glas,klasse:document.body.classList.contains('modell'),
+      gedrueckt:['modell','glas','papier'].filter(s=>document.getElementById(s).getAttribute('aria-pressed')==='true'),
+      seite:getComputedStyle(document.getElementById('seite')).backgroundColor,fuss:getComputedStyle(document.getElementById('fuss')).backgroundColor,
+      ecke:[...cx.getImageData(Math.round(6*dpr),Math.round(6*dpr),1,1).data].slice(0,3),H:H(),gemerkt:localStorage.getItem('glaskit-stil')}));
+    const hell=c=>(c[0]+c[1]+c[2])/3,rgb=t=>t.match(/[\d.]+/g).slice(0,3).map(Number);
+    // „Bild speichern“: Fußzeile im Stil des Bildes und lesbar (Abstand Schrift ↔ Hintergrund)
+    const fusszeile=async()=>{const [dl]=await Promise.all([page.waitForEvent('download'),page.locator('#bild').click()]);const b64=fs.readFileSync(await dl.path()).toString('base64');
+      return page.evaluate(async b64=>{const i=new Image();i.src='data:image/png;base64,'+b64;await i.decode();const c=document.createElement('canvas');c.width=i.width;c.height=i.height;const g=c.getContext('2d');g.drawImage(i,0,0);
+        const f=13*dpr,y0=Math.round(i.height-f*1.6),hoehe=Math.round(f),d=g.getImageData(Math.round(f),y0,Math.round(f*30),hoehe).data;let min=255,max=0;
+        for(let k=0;k<d.length;k+=4){const l=(d[k]+d[k+1]+d[k+2])/3;min=Math.min(min,l);max=Math.max(max,l);}
+        const h=g.getImageData(i.width-4,i.height-4,1,1).data;return {grund:(h[0]+h[1]+h[2])/3,min,max};},b64);};
+    // 1) Modell ist Standard (nichts gemerkt)
+    await laden();let z=await zustand();
+    assert.equal(z.stil,'modell');assert.equal(z.glas,false);assert.ok(z.klasse);assert.deepEqual(z.gedrueckt,['modell']);assert.equal(z.gemerkt,null,'ohne Klick nichts gemerkt');
+    assert.ok(hell(rgb(z.seite))>240&&hell(rgb(z.fuss))>240,'Seitenfeld/Fußleiste hell: '+z.seite);assert.ok(hell(z.ecke)>225,'Bühne hell: '+z.ecke);
+    assert.ok(Math.abs(z.H-3.1*1.35)<1e-9,'Geschossabstand 1,35 × Glas');
+    const m1=await page.evaluate(()=>{const vor=SCHATTEN.gebaut;for(let i=0;i<30;i++)bild(performance.now());
+      return {vor,nach:SCHATTEN.gebaut,proben:KOEPFE.map(k=>k.m.label).sort(),verdeckt:KOEPFE.filter(k=>k.verdeckt).length,waende:S.geschosse.map(g=>!!g.waende)};});
+    assert.equal(m1.nach,m1.vor,'Schatten werden nicht in jedem Bild neu weichgezeichnet');assert.ok(m1.vor<=6,'je Geschoss höchstens zwei Schattenvorlagen');
+    assert.equal(m1.proben.length,20,'jede Probe gezeichnet (sichtbar oder als Umriss)');assert.ok(m1.verdeckt>0&&m1.verdeckt<20,'verdeckte Proben als Umriss: '+m1.verdeckt);
+    assert.deepEqual(m1.waende,[true,true,false],'DG (Bild ohne Skizze) bleibt flache weiße Platte');
+    const ms=await page.evaluate(()=>{const f=()=>{bild(performance.now());cx.getImageData(0,0,1,1);};f();const t=performance.now();for(let i=0;i<20;i++)f();return (performance.now()-t)/20;});
+    console.log('Bild im Modell (mit Rastern): '+ms.toFixed(1)+' ms');
+    await shot('d1-modell');
+    let fz=await fusszeile();assert.ok(fz.grund>230&&fz.grund-fz.min>120,'Fußzeile Modell hell, Schrift dunkel: '+JSON.stringify(fz));
+    // 2) gewählte Probe im Modell: Geschosse darüber (Platte, Seiten, Wände) blassen aus, die Probe selbst ist zu sehen (kein Umriss, Pixel in ihrer Farbe)
+    await page.evaluate(()=>{const g=S.geschosse[0],m=g.marker.find(x=>x.label==='P1');waehle(m,g,true);});await page.waitForTimeout(2200);
+    const w=await page.evaluate(()=>{const k=KOEPFE.find(k=>k.m.label==='P1'),p=cx.getImageData(Math.round(k.x*dpr),Math.round(k.y*dpr),1,1).data,n=parseInt(k.m.b.farbe.slice(1),16);
+      return {deck:S.geschosse.map(g=>+g.deck.toFixed(2)),verdeckt:!!k.verdeckt,pixel:[p[0],p[1],p[2]],soll:[n>>16,n>>8&255,n&255]};});
+    assert.deepEqual(w.deck.map(d=>d<.2),[false,true,true],'Geschosse über der Probe ausgeblendet: '+w.deck);assert.equal(w.verdeckt,false,'P1 nicht verdeckt');
+    assert.ok(w.pixel.every((v,i)=>Math.abs(v-w.soll[i])<40),`P1 in ihrer Farbe zu sehen: ${w.pixel} statt ${w.soll}`);
+    await shot('d4-modell-probe');
+    await page.evaluate(()=>{karteZu();fliege(ganz(),.01);});
+    // 3) Glas: wie bisher, Wahl gemerkt
+    await page.locator('#glas').click();await page.evaluate(()=>fliege(ganz(),.01));await page.waitForTimeout(600);z=await zustand();
+    assert.equal(z.stil,'glas');assert.equal(z.glas,true);assert.equal(z.klasse,false);assert.deepEqual(z.gedrueckt,['glas']);assert.equal(z.gemerkt,'glas');
+    assert.ok(hell(rgb(z.seite))<60&&hell(z.ecke)<60,'Glas bleibt dunkel');assert.ok(Math.abs(z.H-3.1)<1e-9);
+    await shot('d2-glas');
+    fz=await fusszeile();assert.ok(fz.grund<60&&fz.max-fz.grund>120,'Fußzeile Glas dunkel, Schrift hell: '+JSON.stringify(fz));
+    await laden();assert.equal((await zustand()).stil,'glas','nach Neuladen weiter Glas');
+    // 4) Papier
+    await page.locator('#papier').click();await page.waitForTimeout(400);z=await zustand();
+    assert.equal(z.stil,'papier');assert.equal(z.glas,false);assert.equal(z.klasse,false);assert.deepEqual(z.gedrueckt,['papier']);assert.equal(z.gemerkt,'papier');assert.ok(hell(z.ecke)<60);
+    await shot('d3-papier');
+    await page.locator('#modell').click();assert.equal((await zustand()).gemerkt,'modell');
+    // 5) gesperrter Speicher: Seite läuft trotzdem (Modell), Umschalten geht, kein Fehler
+    const p3=await ctx.newPage();p3.on('pageerror',e=>fehler.push(e.message));
+    await p3.addInitScript(()=>{Object.defineProperty(window,'localStorage',{get(){throw new DOMException('gesperrt','SecurityError');}});});
+    await p3.goto(url);await p3.waitForFunction(()=>typeof S!=='undefined'&&S.geschosse.length===3);
+    assert.equal(await p3.evaluate(()=>S.stil),'modell');await p3.locator('#sBeispiel').click();await p3.locator('#glas').click();assert.equal(await p3.evaluate(()=>S.stil),'glas');
+    await p3.close();
+    console.log('D ok');
   }
   assert.deepEqual(fehler,[]);
   await browser.close();server.close();console.log('OK',welche);

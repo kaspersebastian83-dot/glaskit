@@ -10,6 +10,7 @@
   jede Probe leuchtet an ihrer Stelle, in der Höhe ihrer Oberflächenart (Aufsicht unten, Ansicht Mitte, Untersicht oben).
   Farben und Stufen: dieselben Regeln wie PlanKits Ergebniskarte / ResultKit (Hauptwert je Probenart, VdS-Referenzen, KORROSION-CHLORID v2).
   Es wird nichts interpoliert und kein Wert verändert. Der Rauch ist reine Dekoration.
+  Drei Darstellungen (Fußleiste, je Browser gemerkt): „Modell“ (Standard – weißes Kartonmodell, helle Seite), „Glas“, „Papier“.
   GlasKit schreibt nie in den Projektordner.
 -->
 <style>
@@ -131,12 +132,56 @@ canvas.drag{cursor:grabbing}canvas.hit{cursor:pointer}
 #beispiel{position:absolute;left:14px;bottom:76px;background:#fff3d6;color:#5b3a00;border:1px solid #e2b34f;border-radius:8px;padding:5px 10px;font-size:12.5px;display:none}
 #beispiel.auf{display:block}
 @media (max-width:900px){#seite{display:none}}
+/* Darstellung als Gruppe Modell · Glas · Papier */
+.gruppe{display:inline-flex}
+.gruppe .chip{border-radius:0}
+.gruppe .chip+.chip{margin-left:-1px}
+.gruppe .chip:first-child{border-radius:9px 0 0 9px}
+.gruppe .chip:last-child{border-radius:0 9px 9px 0}
+
+/* ================= Stil „Modell“: helles Architekturmodell – die ganze Seite wird hell ================= */
+body.modell{background:#e4e1d9}
+body:not(.modell) #hinweisVerdeckt{display:none}
+body.modell .btn{border-color:#d3cfc6;color:#2a2a28}
+body.modell .btn:hover{background:#f4f2ed;border-color:#2a2a28}
+body.modell .btn.primary{background:#2a2a28;border-color:#2a2a28;color:#fff}
+body.modell .btn.primary:hover{background:#45433f}
+body.modell .brand small{background:#f4f2ed;border-color:#e2ded5;color:#8a857a}
+body.modell .brand span,body.modell #projekt span{color:#8a857a}
+body.modell header{border-bottom-color:#d9d5cc}
+body.modell #seite,body.modell #fuss,body.modell #tour{background:rgba(255,255,255,.9);border-color:#d9d5cc;color:#2a2a28;box-shadow:0 6px 24px rgba(70,60,40,.12)}
+body.modell #seite h3{color:#8a857a}
+body.modell .zeile input,body.modell #fuss input[type=range]{accent-color:#2a2a28}
+body.modell .zeile .n,body.modell .klein,body.modell #seiteZu,body.modell #fuss label{color:#8a857a}
+body.modell .farbe{border-color:rgba(42,42,40,.25)}
+body.modell .form{color:#2a2a28}
+body.modell .chip{background:#fff;border-color:#d3cfc6;color:#2a2a28}
+body.modell .chip:hover{background:#f4f2ed}
+body.modell .chip[aria-pressed=true],body.modell .chip.haupt{background:#2a2a28;border-color:#2a2a28;color:#fff}
+body.modell .chip.haupt:hover{background:#45433f}
+body.modell #tour{color:#2a2a28}
+body.modell .trenner{background:#d9d5cc}
+body.modell #karte{box-shadow:0 10px 32px rgba(70,60,40,.22);border:1px solid #d9d5cc;color:#2a2a28}
+body.modell #karte .ort,body.modell #karte dt,body.modell #karteZu,body.modell #kFotos .titel,body.modell #kFotos .datei,body.modell #kFotos .leise{color:#8a857a}
+body.modell #karte .wert{border-color:#d9d5cc}
+body.modell #kFotos{border-top-color:#e8e5de}
+body.modell #kFotos .gross,body.modell #kFotos .streifen button{background:#e4e1d9}
+body.modell #kFotos .streifen button[aria-current=true]{border-color:#2a2a28;box-shadow:0 0 0 2px #d3cfc6}
+body.modell .fotohinweis{color:#8a857a}
+body.modell #profil{border-top-color:#e8e5de}
+body.modell #profil summary{color:#2a2a28}
+body.modell #profil i{background:#a9a497}
+body.modell #start{background:radial-gradient(ellipse at center,rgba(246,244,239,.35),rgba(228,225,217,.82))}
+body.modell #start .box{box-shadow:0 20px 60px rgba(70,60,40,.25);border:1px solid #d9d5cc}
+body.modell #start p{color:#55524b}
+body.modell #start .eyebrow{color:#8a857a}
+body.modell #ziehen{border-color:#2a2a28;background:rgba(246,244,239,.6);color:#2a2a28}
 </style>
 </head>
 <body>
 <header>
   <svg viewBox="44 4 106 101" aria-hidden="true"><g fill="#363A90"><circle cx="93.44" cy="14.19" r="3.15"/><circle cx="117.44" cy="17.06" r="8.1"/><circle cx="75.19" cy="17.94" r="8.1"/><circle cx="94.56" cy="27.06" r="4.18"/><circle cx="130.94" cy="31.94" r="3.15"/><circle cx="60.44" cy="36.94" r="3.15"/><circle cx="119.81" cy="38.81" r="4.18"/><circle cx="71.81" cy="43.06" r="4.18"/><circle cx="102.31" cy="43.81" r="5.78"/><circle cx="139.94" cy="54.19" r="8.1"/><circle cx="54.06" cy="54.69" r="8.1"/><circle cx="86.56" cy="56.44" r="5.78"/><circle cx="103.81" cy="63.94" r="5.78"/><circle cx="121.94" cy="67.44" r="4.18"/><circle cx="74.44" cy="71.06" r="4.18"/><circle cx="133.94" cy="72.19" r="3.15"/><circle cx="62.81" cy="77.06" r="3.15"/><circle cx="99.81" cy="82.56" r="4.18"/><circle cx="119.44" cy="91.44" r="8.1"/><circle cx="75.81" cy="92.19" r="8.1"/><circle cx="99.81" cy="95.56" r="3.15"/></g><g stroke="#363A90"><line x1="93.44" y1="14.19" x2="117.44" y2="17.06" stroke-width="1.4"/><line x1="75.19" y1="17.94" x2="60.44" y2="36.94" stroke-width="1.4"/><line x1="130.94" y1="31.94" x2="139.94" y2="54.19" stroke-width="1.4"/><line x1="54.06" y1="54.69" x2="62.81" y2="77.06" stroke-width="1.4"/><line x1="133.94" y1="72.19" x2="119.44" y2="91.44" stroke-width="1.4"/><line x1="75.81" y1="92.19" x2="99.81" y2="95.56" stroke-width="1.4"/><line x1="94.56" y1="27.06" x2="102.31" y2="43.81" stroke-width="1.17"/><line x1="86.56" y1="56.44" x2="74.44" y2="71.06" stroke-width="1.17"/><line x1="103.81" y1="63.94" x2="121.94" y2="67.44" stroke-width="1.17"/></g></svg>
-  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.3.0</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
+  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.4.0</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
   <div id="projekt"><b id="pName">–</b><span id="pInfo"></span></div>
   <button class="btn primary" id="ordner">Projektordner öffnen</button>
   <button class="btn" id="datei">Plan-Datei öffnen …</button>
@@ -151,6 +196,7 @@ canvas.drag{cursor:grabbing}canvas.hit{cursor:pointer}
     <h3>Bewertung</h3><div id="legende"></div>
     <h3>Höhe der Kugel</h3>
     <div class="klein">oben = Untersicht (Decke) · Mitte = Ansicht (Wand) · unten = Aufsicht (Boden) · gestrichelter Stiel = Oberflächenart nicht angegeben</div>
+    <div class="klein" id="hinweisVerdeckt">Gestrichelter Umriss = die Probe liegt unter dem Geschoss darüber oder hinter einer Wand. Klick darauf zeigt sie.</div>
   </aside>
   <div id="karte" role="dialog" aria-label="Probe">
     <button id="karteZu" aria-label="Schließen">✕</button>
@@ -165,10 +211,13 @@ canvas.drag{cursor:grabbing}canvas.hit{cursor:pointer}
   <div id="fuss">
     <button class="chip haupt" id="rundgang">▶ Rundgang starten</button>
     <span class="trenner"></span>
-    <button class="chip" id="glas" aria-pressed="true" title="Glas: nur die Linien des Plans, alles andere durchsichtig">Glas</button>
-    <button class="chip" id="papier" aria-pressed="false" title="Papier: der Plan wie gedruckt">Papier</button>
+    <span class="gruppe" role="group" aria-label="Darstellung">
+      <button class="chip" id="modell" data-stil="modell" aria-pressed="true" title="Modell: weißes Architekturmodell aus Karton, der Plan als feine Bleistiftlinien">Modell</button>
+      <button class="chip" id="glas" data-stil="glas" aria-pressed="false" title="Glas: nur die Linien des Plans, alles andere durchsichtig">Glas</button>
+      <button class="chip" id="papier" data-stil="papier" aria-pressed="false" title="Papier: der Plan wie gedruckt">Papier</button>
+    </span>
     <span class="trenner"></span>
-    <button class="chip" id="waende" aria-pressed="true" title="Wände aus der PlanKit-Skizze als Glas hochziehen (nur bei gezeichneten Skizzen)">Wände</button>
+    <button class="chip" id="waende" aria-pressed="true" title="Wände aus der PlanKit-Skizze hochziehen (nur bei gezeichneten Skizzen)">Wände</button>
     <button class="chip" id="rauch" aria-pressed="true" title="Rauch am Brandherd – reine Dekoration, keine Berechnung">Rauch</button>
     <button class="chip" id="dreh" aria-pressed="true" title="Langsam weiterdrehen">Drehen</button>
     <button class="chip" id="werte" aria-pressed="false" title="Werte an den Kugeln zeigen">Werte</button>
@@ -559,7 +608,7 @@ root.SpektronOrdner = api;
 </script>
 <script>
 'use strict';
-const VERSION='1.3.0';
+const VERSION='1.4.0';
 /* ================= Bewertung: aus PlanKit (src/results.ts) übernommen – dort ändern, hier mitändern ================= */
 const UNRATED='#c3ccd5',BELOW_LIMIT='#749bb5',NOT_DETECTED='#8b83a8',NOT_DETERMINED='#9d8975';
 function labNumber(raw){
@@ -728,9 +777,13 @@ function waendeInWelt(g){
 const $=id=>document.getElementById(id);
 const cv=$('c'),cx=cv.getContext('2d');
 const W=10;                    // längere Planseite in Welteinheiten
-const S={geschosse:[],name:'',demo:false,waende:true,kam:{yaw:-.62,pitch:.56,zoom:1,tx:0,ty:0,tz:0},ziel:null,glas:true,rauch:true,dreh:true,werte:false,abstand:1,
+const S={geschosse:[],name:'',demo:false,waende:true,kam:{yaw:-.62,pitch:.56,zoom:1,tx:0,ty:0,tz:0},ziel:null,glas:false,stil:'modell',rauch:true,dreh:true,werte:false,abstand:1,
   artAus:new Set(),wahl:null,hover:null,treffer:[],t0:0,teilchen:[],tour:null,zuletzt:0,bewegt:0};
-const H=()=>3.1*S.abstand;
+/* Darstellung: 'modell' (helles Kartonmodell, Standard), 'glas', 'papier'. Wahl je Browser in localStorage (darf fehlen oder gesperrt sein). */
+const STILE=['modell','glas','papier'],STIL_KEY='glaskit-stil';
+const MODELL=()=>S.stil==='modell';
+// Im Modell sind die Platten undurchsichtig: Geschosse weiter auseinander (1,35 ×), damit die Proben darunter sichtbar bleiben. „Abstand“ wirkt zusätzlich.
+const H=()=>3.1*S.abstand*(MODELL()?1.35:1);
 const ease=t=>t<0?0:t>1?1:1-Math.pow(1-t,3);
 const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 
@@ -783,7 +836,7 @@ async function projektLaden(p,name,demo=false,quelle={art:demo?'beispiel':'datei
   seiteFuellen();kopfFuellen();$('beispiel').classList.toggle('auf',demo);
 }
 const mitteZ=()=>(S.geschosse.length-1)*H()/2+H()*.3;
-const ganz=()=>({yaw:-.62,pitch:.56,zoom:S.geschosse.length>3?.7:.86,tx:0,ty:0,tz:mitteZ()});
+const ganz=()=>({yaw:-.62,pitch:MODELL()?.44:.56,zoom:(S.geschosse.length>3?.7:.86)*(MODELL()?.9:1),tx:0,ty:0,tz:mitteZ()});
 function kopfFuellen(){
   const proben=S.geschosse.flatMap(g=>g.marker.filter(m=>m.kind==='sample'));
   $('pName').textContent=S.name||'–';
@@ -1027,7 +1080,7 @@ function lichtZu(){LICHT=null;const l=document.getElementById('licht');if(l)l.cl
 $('lichtZu').onclick=lichtZu;$('lichtVor').onclick=()=>LICHT&&lichtAuf(LICHT.m,LICHT.nr+1);$('lichtZur').onclick=()=>LICHT&&lichtAuf(LICHT.m,LICHT.nr-1);
 $('licht').onclick=e=>{if(e.target===$('licht'))lichtZu();};
 /** Kleines Kamera-Zeichen neben der Probenbezeichnung: zu dieser Probe gibt es Fotos. */
-function kamera(x,y){cx.save();cx.translate(x,y);cx.lineWidth=3;cx.strokeStyle='rgba(6,14,26,.85)';cx.fillStyle='#fff';
+function kamera(x,y){cx.save();cx.translate(x,y);const mod=MODELL();cx.lineWidth=mod?2:3;cx.strokeStyle=mod?'#4a4741':'rgba(6,14,26,.85)';cx.fillStyle='#fff';
   const form=()=>{cx.beginPath();cx.rect(-6.5,-3.5,13,9);cx.rect(-2.5,-6,5,2.5);};form();cx.stroke();form();cx.fill();
   cx.beginPath();cx.arc(0,1,2.6,0,7);cx.fillStyle='#21303e';cx.fill();cx.restore();}
 
@@ -1043,6 +1096,7 @@ function markerWelt(g,m){return {x:(m.x/g.plan.width-.5)*g.pw,y:(m.y/g.plan.heig
 
 /* ================= Zeichnen ================= */
 function hintergrund(){
+  if(MODELL()){const lg=cx.createLinearGradient(0,0,0,bh);lg.addColorStop(0,'#f6f4ef');lg.addColorStop(1,'#e4e1d9');cx.fillStyle=lg;cx.fillRect(0,0,bw,bh);return;}   // hell, ohne Raster
   const gr=cx.createRadialGradient(bw/2,bh*.45,0,bw/2,bh*.45,Math.max(bw,bh)*.75);gr.addColorStop(0,'#17304f');gr.addColorStop(.55,'#0e1f36');gr.addColorStop(1,'#081220');
   cx.fillStyle=gr;cx.fillRect(0,0,bw,bh);
   // Bodenraster
@@ -1149,34 +1203,165 @@ function rauchSchritt(dt,jetzt){
   S.teilchen=S.teilchen.filter(t=>t.z<oben&&t.a<9);
 }
 function rauchZeichnen(von,bis){
-  const sc=massstab(),oben=S.geschosse.length*H()+1.5;
-  for(const t of S.teilchen){if(t.z<von||t.z>=bis)continue;const p=proj(t.x,t.y,t.z),r=t.g*sc,al=Math.min(1,t.a*1.5)*Math.max(0,1-t.z/oben)*(S.wahl?.035:.1);
-    const gr=cx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);gr.addColorStop(0,`rgba(190,200,215,${al})`);gr.addColorStop(1,'rgba(190,200,215,0)');cx.fillStyle=gr;cx.beginPath();cx.arc(p.x,p.y,r,0,7);cx.fill();}
+  const sc=massstab(),oben=S.geschosse.length*H()+1.5,mod=MODELL(),ton=mod?'70,66,60':'190,200,215',stark=mod?.035:.1;   // Modell: grauer Ruß statt heller Dunst
+  for(const t of S.teilchen){if(t.z<von||t.z>=bis)continue;const p=proj(t.x,t.y,t.z),r=t.g*sc,al=Math.min(1,t.a*1.5)*Math.max(0,1-t.z/oben)*(S.wahl?stark*.35:stark);
+    const gr=cx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);gr.addColorStop(0,`rgba(${ton},${al})`);gr.addColorStop(1,`rgba(${ton},0)`);cx.fillStyle=gr;cx.beginPath();cx.arc(p.x,p.y,r,0,7);cx.fill();}
 }
+/* ================= Stil „Modell“: weißes Kartonmodell wie aus dem Architekturbüro =================
+   Eigene Zeichenwege – Glas und Papier laufen unverändert über platte()/kugel()/wandStueck()/brand(). Gleiche Geometrie, gleiche
+   Tiefensortierung, gleiche Formen und Bewertungsfarben; nur Material und Licht sind anders. Kein additives Leuchten. */
+const MOD={dicke:.16,oben:'#fdfcf9',seiteHell:[217,214,206],seiteDunkel:[201,197,188],kante:'#3a3833',text:'#2a2a28',leise:'#8a857a',
+  schatten:'70,60,40',hilfslinie:'rgba(90,86,78,.45)',halo:'rgba(253,252,249,.92)',wand:{hoch:.34,bruestung:.16}};   // Wände im Schnitt auf gut ⅓ der Geschosshöhe
+/** Geschosshöhe ohne den Modell-Abstand (1,35 ×): darauf beziehen sich die Wandhöhen – ⅓ des echten Geschosses, nicht der auseinandergezogenen Explosionsdarstellung. */
+const HGESCHOSS=()=>3.1*S.abstand;
+/** Richtungen in Weltkoordinaten, die auf dem Bildschirm genau nach rechts (r) bzw. nach vorn/unten (v) zeigen – für Schattenversatz „unten rechts“. */
+function blickAchsen(){const c=Math.cos(S.kam.yaw),s=Math.sin(S.kam.yaw);return {rx:c,ry:-s,vx:s,vy:c};}
+/* Weiche Schatten: Weichzeichnen ist das Teure. Darum je Geschoss EINMAL eine kleine weichgezeichnete Vorlage (Grundriss-Rechteck) bauen
+   und sie danach in jedem Bild nur noch mit der Projektion der Ebene hinlegen (drawImage mit Transformation – billig, auch über RDP). */
+const SCHATTEN={gebaut:0};
+function schattenVorlage(g,art){
+  const key=g.pw.toFixed(4)+'|'+g.ph.toFixed(4);g.schatten=g.schatten||{};const da=g.schatten[art];if(da&&da.key===key)return da;
+  const k=24,blur=art==='boden'?10:26,m=Math.ceil(blur*2.2),c=document.createElement('canvas');c.width=Math.ceil(g.pw*k)+2*m;c.height=Math.ceil(g.ph*k)+2*m;
+  const x=c.getContext('2d'),weg=c.width+64;x.shadowColor=`rgb(${MOD.schatten})`;x.shadowBlur=blur;x.shadowOffsetX=weg;x.fillStyle='#000';x.fillRect(m-weg,m,g.pw*k,g.ph*k);
+  SCHATTEN.gebaut++;return g.schatten[art]={key,c,k,m:m/k};
+}
+/** Schattenvorlage von Geschoss g auf die waagerechte Ebene z legen, um (ox,oy) Welteinheiten versetzt. */
+function schattenAuf(g,art,z,ox,oy,alpha){
+  if(alpha<=.003)return;const v=schattenVorlage(g,art),k=S.kam,c=Math.cos(k.yaw),s=Math.sin(k.yaw),sc=massstab(),sp=Math.sin(k.pitch),u=1/v.k;
+  const o=proj(-g.pw/2-v.m+ox,-g.ph/2-v.m+oy,z);
+  cx.save();cx.globalAlpha=alpha;cx.transform(sc*c*u,sc*s*sp*u,-sc*s*u,sc*c*sp*u,o.x,o.y);cx.drawImage(v.c,0,0);cx.restore();
+}
+const viereckPfad=E=>{cx.beginPath();E.forEach((p,j)=>j?cx.lineTo(p.x,p.y):cx.moveTo(p.x,p.y));cx.closePath();};
+/** Platte mit Dicke: zwei sichtbare Seitenflächen, helle Oberseite, darauf der Plan als Bleistift (multiplizieren, halbe Deckkraft), Name links an einer Führungslinie. */
+function platteModell(g,i,z,alpha){
+  if(alpha<=.003)return;
+  const T=MOD.dicke,k=S.kam,c=Math.cos(k.yaw),s=Math.sin(k.yaw),sc=massstab(),sp=Math.sin(k.pitch);
+  const O=ecken(g,z),U=ecken(g,z-T),N=[[0,-1],[1,0],[0,1],[-1,0]];   // Außennormalen der Kanten O[j]→O[j+1]
+  cx.save();cx.globalAlpha=alpha;cx.lineJoin='round';cx.strokeStyle=MOD.kante;cx.lineWidth=1;
+  N.forEach(([nx,ny],j)=>{if(nx*s+ny*c<=.001)return;   // nur die zum Betrachter gewandten Seiten
+    const rechts=(nx*c-ny*s+1)/2,a=MOD.seiteHell,b=MOD.seiteDunkel,f=t=>Math.round(a[t]+(b[t]-a[t])*rechts);   // stufenlos: beim Drehen springt nichts
+    viereckPfad([O[j],O[(j+1)%4],U[(j+1)%4],U[j]]);cx.fillStyle=`rgb(${f(0)},${f(1)},${f(2)})`;cx.fill();cx.stroke();});
+  viereckPfad(O);cx.fillStyle=MOD.oben;cx.fill();
+  const bild=g.papier,o=O[0],ux=g.pw/bild.width,vy=g.ph/bild.height;
+  cx.save();cx.clip();cx.transform(sc*c*ux,sc*s*sp*ux,-sc*s*vy,sc*c*sp*vy,o.x,o.y);cx.imageSmoothingQuality='high';cx.globalCompositeOperation='multiply';cx.globalAlpha=alpha*.5;cx.drawImage(bild,0,0);cx.restore();
+  viereckPfad(O);cx.stroke();
+  if(alpha>.5){deckt(O);deckt(U);for(let j=0;j<4;j++)deckt([O[j],O[(j+1)%4],U[(j+1)%4],U[j]]);}
+  // Geschossname: kein Schild, Großbuchstaben links neben der Platte an einer feinen Führungslinie
+  const L=O.reduce((p,q)=>q.x<p.x?q:p),y=L.y+sc*T*Math.cos(k.pitch)/2,name=String(g.name).toLocaleUpperCase('de-DE');
+  cx.font='600 12px '+SCHRIFT;if('letterSpacing' in cx)cx.letterSpacing='.6px';const tw=cx.measureText(name).width,x1=L.x-8,x2=Math.max(tw+14,L.x-46);
+  if(x1-x2>6){cx.strokeStyle=MOD.leise;cx.lineWidth=1;cx.beginPath();cx.moveTo(x1,y);cx.lineTo(x2,y);cx.stroke();cx.beginPath();cx.arc(x1,y,1.6,0,7);cx.fillStyle=MOD.leise;cx.fill();}
+  cx.fillStyle=MOD.text;cx.textAlign='right';cx.textBaseline='middle';cx.fillText(name,x2-6,y);if('letterSpacing' in cx)cx.letterSpacing='0px';
+  cx.restore();
+}
+/** Wand als undurchsichtiger weißer Karton, im Schnitt auf ⅓ Geschosshöhe. Türen offen, Fenster mit Brüstung und hellerer Scheibe. */
+function wandModell(w,z,hoch,al){
+  if(al<=.01||w.art==='tuer')return;   // Tür = Öffnung; einen Sturz gibt es im Schnitt nicht (die Laibungen zeichnen die Wandstücke daneben)
+  const h=HGESCHOSS()*MOD.wand.hoch*hoch,zb=HGESCHOSS()*MOD.wand.bruestung*hoch,c=Math.cos(S.kam.yaw),s=Math.sin(S.kam.yaw);
+  // Helligkeit nach der Richtung der Wand zum Betrachter (Licht von vorn links, Karton beidseitig gleich) → 226…252
+  const len=Math.hypot(w.x2-w.x1,w.y2-w.y1)||1,nx=(w.y2-w.y1)/len,ny=-(w.x2-w.x1)/len,d=Math.abs((nx*c-ny*s)*-.55+(nx*s+ny*c)*.835),v=Math.round(226+26*d);
+  const fl=`rgb(${v},${v},${Math.round(v*.985)})`;
+  cx.save();cx.globalAlpha=al;cx.lineJoin='round';
+  const zt=w.art==='fenster'?zb:h;if(al>.5)deckt([proj(w.x1,w.y1,z),proj(w.x2,w.y2,z),proj(w.x2,w.y2,z+zt),proj(w.x1,w.y1,z+zt)]);
+  viereck(w.x1,w.y1,w.x2,w.y2,z,z+zt);cx.fillStyle=fl;cx.fill();cx.strokeStyle=fl;cx.lineWidth=.6;cx.stroke();   // Rand in Füllfarbe: keine hellen Fugen zwischen den Stücken
+  if(w.art==='fenster'){viereck(w.x1,w.y1,w.x2,w.y2,z+zb,z+h);cx.fillStyle='rgba(234,240,242,.6)';cx.fill();}
+  cx.strokeStyle='#5d5a53';cx.lineWidth=.7;
+  strich(w.x1,w.y1,z+h,w.x2,w.y2,z+h);if(w.art==='fenster')strich(w.x1,w.y1,z+zb,w.x2,w.y2,z+zb);
+  if(w.anfang)strich(w.x1,w.y1,z,w.x1,w.y1,z+h);if(w.ende)strich(w.x2,w.y2,z,w.x2,w.y2,z+h);
+  cx.globalAlpha=al*.55;strich(w.x1,w.y1,z,w.x2,w.y2,z);
+  cx.restore();
+}
+/** Brandraum: nur ein weicher warmer Ton auf dem Boden, kein Leuchten. Kennzeichnung aus PlanKit, kein Messwert. */
+function brandraumModell(g,z,al){
+  if(!g.waende||!g.waende.brand.length||al<=.01)return;
+  for(const r of g.waende.brand){viereckPfad([proj(r.a.x,r.a.y,z),proj(r.b.x,r.a.y,z),proj(r.b.x,r.b.y,z),proj(r.a.x,r.b.y,z)]);cx.fillStyle=`rgba(226,140,80,${.14*al})`;cx.fill();}
+}
+function formPfad(f,x,y,r){cx.beginPath();
+  if(f==='square')cx.rect(x-r*.9,y-r*.9,r*1.8,r*1.8);
+  else if(f==='diamond'){cx.moveTo(x,y-r*1.2);cx.lineTo(x+r*1.1,y);cx.lineTo(x,y+r*1.2);cx.lineTo(x-r*1.1,y);cx.closePath();}
+  else cx.arc(x,y,r,0,7);}
+/** Probe im Modell: flache Form in der Bewertungsfarbe (unverändert), weißer Ring, feine dunkle Außenlinie, kleiner Schlagschatten, dünner dunkler Stiel. */
+function probeModell(m,g,z,jetzt,ein){
+  const w=markerWelt(g,m),fr=HOEHE[m.surface]??.3,fuss=proj(w.x,w.y,z),kopf=proj(w.x,w.y,z+fr*H()),b=m.b,gew=S.wahl===m,hov=S.hover===m;
+  const r=Math.max(6,Math.min(15,massstab()*.16))*ein*(gew?1.35:hov?1.18:1),f=formVon(m);
+  cx.save();
+  cx.beginPath();cx.ellipse(fuss.x,fuss.y,r*.45,r*.45*Math.sin(S.kam.pitch),0,0,7);cx.fillStyle='rgba(74,71,65,.28)';cx.fill();
+  cx.strokeStyle='#4a4741';cx.lineWidth=1;cx.setLineDash(m.surface&&HOEHE[m.surface]!==undefined?[]:[3,3]);cx.beginPath();cx.moveTo(fuss.x,fuss.y);cx.lineTo(kopf.x,kopf.y);cx.stroke();cx.setLineDash([]);
+  if(b.hoch){const gl=cx.createRadialGradient(kopf.x,kopf.y,r*.8,kopf.x,kopf.y,r*2.7);gl.addColorStop(0,hell(b.farbe,.2));gl.addColorStop(1,hell(b.farbe,0));cx.fillStyle=gl;cx.beginPath();cx.arc(kopf.x,kopf.y,r*2.7,0,7);cx.fill();}   // nur höchste Stufe
+  formPfad(f,kopf.x+1.3,kopf.y+2.2,r+1.2);cx.fillStyle='rgba(50,42,30,.2)';cx.fill();   // Schlagschatten ohne Weichzeichner
+  const ring=gew?3:2.2;formPfad(f,kopf.x,kopf.y,r);cx.fillStyle=b.farbe;cx.fill();cx.lineWidth=ring;cx.strokeStyle='#fff';cx.stroke();
+  formPfad(f,kopf.x,kopf.y,r+ring/2+.45);cx.lineWidth=.9;cx.strokeStyle='rgba(42,42,40,.85)';cx.stroke();
+  if(gew){cx.beginPath();cx.arc(kopf.x,kopf.y,r*1.9+2*Math.sin(jetzt/300),0,7);cx.strokeStyle='rgba(42,42,40,.6)';cx.lineWidth=1.3;cx.setLineDash([5,4]);cx.stroke();cx.setLineDash([]);}
+  cx.font='600 12.5px '+SCHRIFT;cx.textAlign='left';cx.textBaseline='middle';const text=S.werte&&b.text?`${m.label}  ${b.text}`:m.label;
+  cx.lineJoin='round';cx.lineWidth=3.5;cx.strokeStyle=MOD.halo;cx.strokeText(text,kopf.x+r+6,kopf.y);cx.fillStyle=MOD.text;cx.fillText(text,kopf.x+r+6,kopf.y);
+  if(fotosVon(m).length)kamera(kopf.x+r+6+cx.measureText(text).width+12,kopf.y);
+  cx.restore();
+  S.treffer.push({m,g,x:kopf.x,y:kopf.y,r:r+5});
+  KOEPFE.push({m,x:kopf.x,y:kopf.y,r,f,text});
+}
+/* Verdeckte Proben: Im Modell sind Platten und Wände undurchsichtig. Eine Probe an der Decke liegt fast immer genau unter der Platte darüber,
+   eine am Boden oft hinter einer Wand. Damit keine Probe unbemerkt verschwindet, steht über allem ein leiser gestrichelter Umriss (gleiche Form,
+   gleiche Farbe, Bezeichnung grau), sobald etwas Undurchsichtiges, das NACH der Probe gezeichnet wurde, ihre Mitte verdeckt. Die Tiefensortierung
+   selbst bleibt wie sie ist. Klick auf den Umriss wählt die Probe wie bisher; dann blasst alles darüber aus (und die Wände des Geschosses werden
+   durchscheinend) – die Probe selbst ist zu sehen und der Umriss verschwindet. */
+let KOEPFE=[],DECKT=[];
+const deckt=E=>{DECKT.push({n:KOEPFE.length,E});};   // n = so viele Proben waren schon gezeichnet → verdeckt nur diese
+function imVieleck(x,y,E){let drin=false;for(let a=0,b=E.length-1;a<E.length;b=a++){const p=E[a],q=E[b];if((p.y>y)!==(q.y>y)&&x<(q.x-p.x)*(y-p.y)/(q.y-p.y)+p.x)drin=!drin;}return drin;}
+function verdeckteZeichnen(){
+  cx.save();cx.font='600 12.5px '+SCHRIFT;cx.textAlign='left';cx.textBaseline='middle';cx.lineJoin='round';
+  KOEPFE.forEach((k,nr)=>{
+    if(!DECKT.some(d=>d.n>nr&&imVieleck(k.x,k.y,d.E)))return;k.verdeckt=true;
+    formPfad(k.f,k.x,k.y,k.r);cx.fillStyle='rgba(253,252,249,.75)';cx.fill();cx.setLineDash([3,2.5]);cx.lineWidth=1.8;cx.strokeStyle=k.m.b.farbe;cx.stroke();cx.setLineDash([]);
+    cx.lineWidth=3;cx.strokeStyle=MOD.halo;cx.strokeText(k.text,k.x+k.r+6,k.y);cx.fillStyle=MOD.leise;cx.fillText(k.text,k.x+k.r+6,k.y);
+  });
+  cx.restore();
+}
+/** Brandherd im Modell: gedämpftes Orange ohne additives Mischen. Reine Dekoration wie in Glas. */
+function brandModell(m,g,z,jetzt){
+  const w=markerWelt(g,m),p=proj(w.x,w.y,z+.05),r=Math.max(10,massstab()*.3);
+  cx.save();
+  const gl=cx.createRadialGradient(p.x,p.y,0,p.x,p.y,r*2.4);gl.addColorStop(0,'rgba(214,120,60,.22)');gl.addColorStop(1,'rgba(214,120,60,0)');cx.fillStyle=gl;cx.beginPath();cx.ellipse(p.x,p.y,r*2.4,r*2.4*Math.sin(S.kam.pitch),0,0,7);cx.fill();
+  for(let i=0;i<5;i++){const ph=jetzt/260+i*1.7+m.x,h=r*(1.05+.6*Math.sin(ph)*Math.sin(ph*.37+i)),ox=Math.sin(ph*1.3+i)*r*.24,cy=p.y-h*.45;
+    const gr=cx.createRadialGradient(p.x+ox,cy,0,p.x+ox,cy,r*(.85-i*.08));gr.addColorStop(0,`rgba(${222-i*6},${132-i*10},${70-i*6},.3)`);gr.addColorStop(1,'rgba(222,132,70,0)');
+    cx.fillStyle=gr;cx.beginPath();cx.ellipse(p.x+ox,cy,r*(.5-i*.05),h*.7,0,0,7);cx.fill();}
+  cx.font='600 12px '+SCHRIFT;cx.textAlign='center';cx.textBaseline='top';cx.lineJoin='round';cx.lineWidth=3.5;cx.strokeStyle=MOD.halo;cx.strokeText('Brandherd',p.x,p.y+r*.5);cx.fillStyle='#a8431a';cx.fillText('Brandherd',p.x,p.y+r*.5);
+  cx.restore();
+}
+
 function bild(jetzt){
   cx.setTransform(dpr,0,0,dpr,0,0);hintergrund();S.treffer=[];
-  const gs=S.geschosse,n=gs.length;
-  // Eckpfosten: machen aus den Platten ein Gebäude
-  for(let i=0;i<n-1;i++){if(!gs[i].sichtbar||!gs[i+1].sichtbar)continue;const a=geschossZ(i,jetzt),b=geschossZ(i+1,jetzt);if(b.a<.99)continue;const A=ecken(gs[i],a.z),B=ecken(gs[i+1],b.z);
-    cx.strokeStyle='rgba(140,195,255,.22)';cx.lineWidth=1;for(let j=0;j<4;j++){cx.beginPath();cx.moveTo(A[j].x,A[j].y);cx.lineTo(B[j].x,B[j].y);cx.stroke();}}
+  const gs=S.geschosse,n=gs.length,mod=MODELL();KOEPFE=[];DECKT=[];
+  if(mod){   // Schatten des untersten Geschosses auf dem Boden, leicht nach unten rechts
+    const i0=gs.findIndex(g=>g.sichtbar);if(i0>=0){const {a}=geschossZ(i0,jetzt),A=blickAchsen();schattenAuf(gs[i0],'boden',-MOD.dicke-.01,A.rx*.14+A.vx*.3,A.ry*.14+A.vy*.3,.28*a*gs[i0].deck);}}
+  // Eckpfosten (Glas/Papier) bzw. gestrichelte Hilfslinien wie in einer Explosionszeichnung (Modell): machen aus den Platten ein Gebäude
+  for(let i=0;i<n-1;i++){if(!gs[i].sichtbar||!gs[i+1].sichtbar)continue;const a=geschossZ(i,jetzt),b=geschossZ(i+1,jetzt);if(b.a<.99)continue;const A=ecken(gs[i],a.z),B=ecken(gs[i+1],mod?b.z-MOD.dicke:b.z);
+    cx.save();if(mod){cx.strokeStyle=MOD.hilfslinie;cx.setLineDash([4,4]);cx.globalAlpha=Math.min(gs[i].deck,gs[i+1].deck)*.7+.3;}else cx.strokeStyle='rgba(140,195,255,.22)';
+    cx.lineWidth=1;for(let j=0;j<4;j++){cx.beginPath();cx.moveTo(A[j].x,A[j].y);cx.lineTo(B[j].x,B[j].y);cx.stroke();}cx.restore();}
   gs.forEach((g,i)=>{
     const {z,a}=geschossZ(i,jetzt);
     if(g.sichtbar&&a>0){
-      platte(g,i,z,a*g.deck);
+      if(mod){
+        platteModell(g,i,z,a*g.deck);
+        // weicher Schatten der nächsten sichtbaren Platte darüber – nur auf dieser Platte (ausgeschnitten), blasst mit der oberen Platte aus
+        const j=gs.findIndex((x,k)=>k>i&&x.sichtbar);
+        if(j>0){const o=geschossZ(j,jetzt),gap=Math.max(.3,o.z-MOD.dicke-z),A=blickAchsen();
+          if(o.a>0){cx.save();viereckPfad(ecken(g,z));cx.clip();schattenAuf(gs[j],'platte',z,gap*(A.rx*.06+A.vx*.09),gap*(A.ry*.06+A.vy*.09),.13*o.a*gs[j].deck*Math.min(1,a*g.deck));cx.restore();}}
+      }else platte(g,i,z,a*g.deck);
       const start=S.t0+n*380+700,mitWand=!!(S.waende&&g.waende),hoch=mitWand?ease((jetzt-start+300-i*220)/1100):0;   // Wände wachsen nach den Platten
-      if(hoch>0)brandraumBoden(g,z,jetzt,a*g.deck*hoch);
+      if(hoch>0){if(mod)brandraumModell(g,z,a*g.deck*hoch);else brandraumBoden(g,z,jetzt,a*g.deck*hoch);}
       const liste=g.marker.filter(m=>m.kind==='fire'||!S.artAus.has(typVon(m)||'ohne Angabe')).map(m=>({m,t:proj(...Object.values(markerWelt(g,m)),z).t})).sort((p,q)=>p.t-q.t);
       liste.forEach((e,j)=>{e.j=j;});
-      // Wände und Proben gemeinsam von hinten nach vorn: eine Probe hinter einer Glaswand liegt hinter dem Glas, eine davor bleibt frei.
+      // Wände und Proben gemeinsam von hinten nach vorn: eine Probe hinter einer Wand liegt hinter ihr, eine davor bleibt frei.
       const dinge=hoch>0?liste.concat(g.waende.stuecke.map(w=>({w,t:proj((w.x1+w.x2)/2,(w.y1+w.y2)/2,z).t}))).sort((p,q)=>p.t-q.t):liste;
-      const wa=a*g.deck*(S.wahl&&g.marker.includes(S.wahl)?.55:1);
+      const wa=a*g.deck*(S.wahl&&g.marker.includes(S.wahl)?(mod?.45:.55):1);   // Kartonwände sind undurchsichtig → beim Wählen etwas stärker zurücknehmen
       for(const e of dinge){
-        if(e.w){wandStueck(e.w,z,hoch,wa,jetzt);continue;}
-        const {m,j}=e,ein=ease((jetzt-start-(i*5+j)*90)/450);if(ein<=0||g.deck<.5)continue;if(m.kind==='fire')brand(m,g,z,jetzt);else kugel(m,g,z,jetzt,ein);
+        if(e.w){if(mod)wandModell(e.w,z,hoch,wa);else wandStueck(e.w,z,hoch,wa,jetzt);continue;}
+        const {m,j}=e,ein=ease((jetzt-start-(i*5+j)*90)/450);if(ein<=0||g.deck<.5)continue;
+        if(m.kind==='fire')(mod?brandModell:brand)(m,g,z,jetzt);else (mod?probeModell:kugel)(m,g,z,jetzt,ein);
       }
     }
     rauchZeichnen(i===0?-1:i*H(),i===n-1?1e9:(i+1)*H());
   });
+  if(mod)verdeckteZeichnen();
 }
 
 /* ================= Kamera, Schleife ================= */
@@ -1248,7 +1433,7 @@ $('karteZu').onclick=()=>{S.tour?tourEnde():karteZu();};
 function tourStopps(){const out=[];S.geschosse.forEach((g,i)=>{if(!g.sichtbar)return;g.marker.filter(m=>m.kind==='sample'&&!S.artAus.has(typVon(m)||'ohne Angabe')).sort((a,b)=>a.label.localeCompare(b.label,'de',{numeric:true})).forEach(m=>out.push({m,g,i}));});return out;}
 function tourStart(){const st=tourStopps();if(!st.length){melde('Für einen Rundgang braucht es mindestens eine gesetzte Probe.');return;}S.tour={st,i:-1,rest:0,pause:false};$('tour').classList.add('auf');$('rundgang').textContent='■ Rundgang beenden';tourGeh(1);}
 function tourGeh(d){const T=S.tour;if(!T)return;T.i+=d;if(T.i>=T.st.length){tourEnde();return;}if(T.i<0)T.i=0;const s=T.st[T.i],w=markerWelt(s.g,s.m);
-  waehle(s.m,s.g,false);fliege({tx:w.x,ty:w.y,tz:s.i*H()+H()*.45,zoom:1.75,yaw:S.kam.yaw-.55,pitch:.52},1.6);T.rest=fotosVon(s.m).length?7:5.2;$('tourText').textContent=`${T.i+1} von ${T.st.length} · ${s.g.name}`;}
+  waehle(s.m,s.g,false);fliege({tx:w.x,ty:w.y,tz:s.i*H()+H()*.45,zoom:1.75,yaw:S.kam.yaw-.55,pitch:MODELL()?.46:.52},1.6);T.rest=fotosVon(s.m).length?7:5.2;$('tourText').textContent=`${T.i+1} von ${T.st.length} · ${s.g.name}`;}
 function tourSchritt(dt){const T=S.tour;if(!T||T.pause)return;if(!S.ziel)S.kam.yaw-=dt*.05;T.rest-=dt;if(T.rest<=0)tourGeh(1);}
 function tourPause(){const T=S.tour;if(!T)return;T.pause=!T.pause;$('tPause').textContent=T.pause?'▶ Weiter':'⏸ Pause';}
 function tourEnde(){if(!S.tour)return;S.tour=null;$('tour').classList.remove('auf');$('tPause').textContent='⏸ Pause';$('rundgang').textContent='▶ Rundgang starten';karteZu();fliege(ganz(),1.8);}
@@ -1257,8 +1442,17 @@ $('tVor').onclick=()=>tourGeh(1);$('tZur').onclick=()=>tourGeh(-1);$('tPause').o
 
 /* ---------- Fußleiste ---------- */
 const druck=(el,an)=>el.setAttribute('aria-pressed',an);
-$('glas').onclick=()=>{S.glas=true;druck($('glas'),true);druck($('papier'),false);};
-$('papier').onclick=()=>{S.glas=false;druck($('glas'),false);druck($('papier'),true);};
+/** Darstellung umschalten. Der Geschossabstand hängt am Stil – Kamera, laufende Fahrt und Rauch werden mitgezogen (wie beim Regler „Abstand“). */
+function stilSetzen(stil,merken=true){
+  if(!STILE.includes(stil))stil='modell';
+  const alt=H();S.stil=stil;S.glas=stil==='glas';const f=H()/alt;
+  if(f!==1){S.kam.tz*=f;if(S.ziel){S.ziel.tz*=f;S.ziel.von.tz*=f;}for(const t of S.teilchen)t.z*=f;}
+  document.body.classList.toggle('modell',stil==='modell');
+  for(const s of STILE)druck($(s),s===stil);
+  if(merken)try{localStorage.setItem(STIL_KEY,stil);}catch{/* z. B. gesperrter Speicher – dann eben nicht merken */}
+}
+for(const s of STILE)$(s).onclick=()=>stilSetzen(s);
+{let gemerkt=null;try{gemerkt=localStorage.getItem(STIL_KEY);}catch{}stilSetzen(STILE.includes(gemerkt)?gemerkt:'modell',false);}
 $('rauch').onclick=()=>{S.rauch=!S.rauch;druck($('rauch'),S.rauch);if(!S.rauch)S.teilchen=[];};
 $('dreh').onclick=()=>{S.dreh=!S.dreh;druck($('dreh'),S.dreh);};
 $('waende').onclick=()=>{S.waende=!S.waende;druck($('waende'),S.waende);};
@@ -1269,7 +1463,10 @@ $('seiteZu').onclick=()=>{$('seite').style.display='none';};
 $('bild').onclick=()=>{
   bild(performance.now());
   const c=document.createElement('canvas');c.width=cv.width;c.height=cv.height;const g=c.getContext('2d');g.drawImage(cv,0,0);
-  const fs=13*dpr;g.font=`${fs}px ${SCHRIFT}`;g.fillStyle='rgba(8,18,32,.75)';g.fillRect(0,c.height-fs*2.2,c.width,fs*2.2);g.fillStyle='#dbe8f6';g.textBaseline='middle';
+  // Fußzeile im Stil des Bildes: im Modell hell mit dunkler Schrift, sonst dunkel mit heller
+  const fs=13*dpr,mod=MODELL();g.font=`${fs}px ${SCHRIFT}`;g.fillStyle=mod?'rgba(253,252,249,.92)':'rgba(8,18,32,.75)';g.fillRect(0,c.height-fs*2.2,c.width,fs*2.2);
+  if(mod){g.fillStyle='#d9d5cc';g.fillRect(0,c.height-fs*2.2,c.width,Math.max(1,dpr));}
+  g.fillStyle=mod?'#2a2a28':'#dbe8f6';g.textBaseline='middle';
   g.fillText(`${S.demo?'BEISPIEL – Werte frei erfunden · ':''}${S.name} · Darstellung ${S.massstab?'':'nicht maßstäblich, '}zur Veranschaulichung · Werte laut Prüfbericht · Rauch nur Dekoration · GlasKit ${VERSION} / Spektron`,fs,c.height-fs*1.1);
   c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`GlasKit ${S.name.replace(/[\\/:*?"<>|]/g,'_')||'Ansicht'}.png`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);},'image/png');
 };

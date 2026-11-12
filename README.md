@@ -2,11 +2,11 @@
 
 Das Gebäude aus Glas – Teil der Spektron-Suite.
 
-GlasKit liest eine PlanKit-Datei (`*.probenplan`) **nur lesend** und zeigt die Geschosse als gestapelte Glasplatten. Jede Probe leuchtet an ihrer Stelle: Form nach Probenart (Kreis PAK, Quadrat Chlorid, Raute Asbest), Farbe nach derselben Bewertung wie PlanKits Ergebniskarte, Höhe nach Oberflächenart (Aufsicht unten, Ansicht Mitte, Untersicht oben).
+GlasKit liest eine PlanKit-Datei (`*.probenplan`) **nur lesend** und zeigt die Geschosse als gestapeltes Modell – als weißes Kartonmodell („Modell“, Standard) oder als Glasplatten („Glas“, „Papier“). Jede Probe leuchtet an ihrer Stelle: Form nach Probenart (Kreis PAK, Quadrat Chlorid, Raute Asbest), Farbe nach derselben Bewertung wie PlanKits Ergebniskarte, Höhe nach Oberflächenart (Aufsicht unten, Ansicht Mitte, Untersicht oben).
 
 ![Vorschau](docs/vorschau.png)
 
-Aktuelle Version: **1.3.0** (steht oben neben dem Namen).
+Aktuelle Version: **1.4.0** (steht oben neben dem Namen).
 
 ## Benutzen
 
@@ -15,15 +15,17 @@ Aus der **Projektzentrale**: Projekt wählen → „Mehr zum Projekt …“ → 
 Oder `index.html` in Edge oder Chrome öffnen (oder über GitHub Pages) → „Projektordner öffnen“ oder „Plan-Datei öffnen …“. Ohne Projekt: „Beispielgebäude ansehen“ (alle Werte frei erfunden).
 
 - Ziehen = drehen · Umschalt + Ziehen = verschieben · Mausrad = Zoom
+- **Darstellung** unten: **Modell · Glas · Papier**. „Modell“ (Standard) ist ein helles Architekturmodell aus weißem Karton: Platten mit Dicke und weichem Schatten, der Plan als feine Bleistiftlinien, Wände als Karton auf gut ⅓ Geschosshöhe (wie ein Schnittmodell), Proben als flache Marken mit weißem Ring; die ganze Seite wird hell. „Glas“ und „Papier“ sind unverändert wie bis 1.3.0. Die Wahl merkt sich der Browser.
+- Im Modell sind Platten und Wände undurchsichtig. Damit dabei keine Probe verschwindet, stehen die Geschosse weiter auseinander (1,35 × – „Abstand“ wirkt zusätzlich), die Kamera blickt flacher, und eine verdeckte Probe (unter dem Geschoss darüber oder hinter einer Wand) erscheint als **gestrichelter Umriss** in ihrer Farbe. Klick darauf = wie bei jeder Probe: die Geschosse darüber blassen aus, die Wände des Geschosses werden durchscheinend.
 - Klick auf eine Probe: Karte mit dem Wert wie im Prüfbericht, Geschosse darüber werden durchsichtig
-- **Wände** (nur bei Plänen, die in PlanKit als Skizze gezeichnet sind): Wände als Glas bis knapp unter das nächste Geschoss, Türen offen (mit Sturz), Fenster mit Brüstung und Glasscheibe, der Brandraum vom Boden her warm angeleuchtet. Schalter „Wände“ unten. PDF- und Bildpläne bleiben flache Platten.
+- **Wände** (nur bei Plänen, die in PlanKit als Skizze gezeichnet sind): in „Glas“/„Papier“ Wände als Glas bis knapp unter das nächste Geschoss, Türen offen (mit Sturz), Fenster mit Brüstung und Glasscheibe, der Brandraum vom Boden her warm angeleuchtet. Schalter „Wände“ unten. PDF- und Bildpläne bleiben flache Platten.
 - **Fotos aus FotoKit** in der Probenkarte (nur wenn das Projekt als Ordner geöffnet ist): großes Bild mit FotoKits Beschreibung, darunter alle Fotos der Probe; Klick = Großansicht (Pfeiltasten, Esc). Aussortierte Fotos fehlen, Drehung wie in FotoKit, HEIC-Fotos bekommen einen ruhigen Hinweis. Proben mit Fotos tragen ein kleines Kamera-Zeichen.
 - „Rundgang“: Kamerafahrt von Probe zu Probe, das Foto erscheint mit der Karte (Leertaste = Pause, Pfeiltasten, Esc)
-- „Bild speichern“: PNG der aktuellen Ansicht als Download
+- „Bild speichern“: PNG der aktuellen Ansicht als Download, in der Darstellung, die gerade zu sehen ist (Fußzeile im Modell hell mit dunkler Schrift)
 
 ## Grundsätze
 
-- Eine Datei, offline, keine Abhängigkeiten, kein WebGL (läuft auch über RDP).
+- Eine Datei, offline, keine Abhängigkeiten, kein WebGL (läuft auch über RDP). Die weichen Schatten im Modell werden je Geschoss einmal vorberechnet und danach nur noch hingelegt.
 - GlasKit schreibt nie in den Projektordner.
 - Werte und Bezeichnungen stehen so da wie im Prüfbericht. Es wird nichts interpoliert. Ohne Bewertungsskala im Projekt bleibt eine Probe grau.
 - Der Rauch am Brandherd ist reine Dekoration, keine Berechnung.
@@ -32,6 +34,10 @@ Oder `index.html` in Edge oder Chrome öffnen (oder über GitHub Pages) → „P
 ## Wände aus der Skizze
 
 `plan.sketch` (PlanKit `src/sketch.ts`, cm): Raumrechtecke und freie Wände; gemeinsame Kanten benachbarter Räume werden zu einer Wand zusammengelegt, Türen/Fenster schneiden sie (gleiche Lage-Regel wie PlanKit: parallel, auf der Linie). Höhen als Anteil des Geschossabstands (Wand 0,94 · Sturz 0,72 · Brüstung 0,30), daher passen Proben (Decke 0,9) immer unter die Wandkrone. Wände und Proben werden gemeinsam von hinten nach vorn gezeichnet (Wände dafür in Stücke ≤ 0,45 Welteinheiten geteilt). Passt die Skizze nicht zur Plangröße oder ist der Plan gedreht/zugeschnitten, bleibt er flach.
+
+## Darstellung „Modell“ (1.4.0)
+
+Eigene Zeichenwege (`platteModell`, `wandModell`, `probeModell`, `brandModell`, `brandraumModell`) – „Glas“ und „Papier“ laufen weiter über die alten Funktionen und sind pixelgleich mit 1.3.0. Gleiche Geometrie, gleiche Tiefensortierung von Wänden und Proben, gleiche Formen und Bewertungsfarben. Platte 0,16 Welteinheiten dick (Oberseite `#fdfcf9`, sichtbare Seiten `#d9d6ce`/`#c9c5bc` stufenlos nach Blickrichtung, Kanten `#3a3833`), Plan multipliziert mit 50 %. Schatten: je Geschoss eine weichgezeichnete Vorlage (Boden: unterstes Geschoss, rgba(70,60,40,.28); Platte auf Platte, auf die untere Platte zugeschnitten), Zähler `SCHATTEN.gebaut`. Wandhöhe 0,34 der echten Geschosshöhe (ohne den Modell-Abstand), Brüstung 0,16; Türen offen; Fenster mit hellerer Scheibe. Brandraum: warmer Ton auf dem Boden, kein Leuchten. Brandherd gedämpftes Orange ohne additives Mischen, Rauch als grauer Ruß – weiterhin reine Dekoration. Verdeckte Proben: Alles Undurchsichtige, das nach einer Probe gezeichnet wird und ihre Mitte überdeckt (Platte oder Wand mit Deckkraft > 0,5), löst den Umriss aus. Wahl in `localStorage` `glaskit-stil` (in try/catch).
 
 ## Fotos (FotoKit)
 
@@ -47,4 +53,4 @@ Die Bewertungsregeln (VdS-2357-Referenzen, KORROSION-CHLORID v2, Asbest-Befund, 
 
 ## Prüfen
 
-`tests/glaskit-check.cjs` (Playwright, erfundene Daten, Bildschirmfotos nach `tests/out/`): `node tests/glaskit-check.cjs a|b|c|alle`. Kein Testgerüst, keine CI.
+`tests/glaskit-check.cjs` (Playwright, erfundene Daten, Bildschirmfotos nach `tests/out/`): `node tests/glaskit-check.cjs a|b|c|d|alle` (d = Darstellungen: je eine Prüfung für Modell, Glas, Papier, gewählte Probe im Modell, „Bild speichern“, gesperrter Speicher). Kein Testgerüst, keine CI.
