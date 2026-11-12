@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GlasKit – Spektron</title>
+<!--
+  GlasKit – das Gebäude aus Glas (Spektron). Eine einzige Datei, offline, ohne Abhängigkeiten, ohne WebGL (läuft auch über RDP).
+  Liest eine PlanKit-Projektdatei (*.probenplan) NUR LESEND und zeigt die Geschosse als gestapelte Glasplatten:
+  jede Probe leuchtet an ihrer Stelle, in der Höhe ihrer Oberflächenart (Aufsicht unten, Ansicht Mitte, Untersicht oben).
+  Farben und Stufen: dieselben Regeln wie PlanKits Ergebniskarte / ResultKit (Hauptwert je Probenart, VdS-Referenzen, KORROSION-CHLORID v2).
+  Es wird nichts interpoliert und kein Wert verändert. Der Rauch ist reine Dekoration.
+  GlasKit schreibt nie in den Projektordner.
+-->
+<style>
+:root{--bg:#eef4fb;--panel:#fff;--line:#dce8f5;--line2:#c2d6ec;--text:#21303e;--muted:#6b8199;--accent:#3f7cc0;--accent2:#356aa8;--logo:#363A90;
+  --sans:'IBM Plex Sans',"Segoe UI",system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,Consolas,monospace}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--sans);color:var(--text);background:#0b1522;display:flex;flex-direction:column;overflow:hidden}
+button{font:inherit;cursor:pointer}
+header{background:var(--panel);border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:14px;padding:8px 16px;flex:none}
+header svg{width:34px;height:34px;flex:none}
+.brand b{font-size:18px;letter-spacing:.2px}
+.brand span{display:block;font-size:12px;color:var(--muted);margin-top:-2px}
+#projekt{margin-left:10px;padding-left:16px;border-left:1px solid var(--line2);min-width:0;flex:1}
+#projekt b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#projekt span{font-size:12px;color:var(--muted)}
+.btn{border:1px solid var(--line2);background:#fff;color:var(--text);border-radius:8px;padding:8px 13px;font-size:14px;white-space:nowrap}
+.btn:hover{background:#f4f9fe;border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--accent2)}
+.btn:focus-visible,.chip:focus-visible,input:focus-visible{outline:3px solid #9cc3ee;outline-offset:1px}
+main{position:relative;flex:1;min-height:0}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+canvas.drag{cursor:grabbing}canvas.hit{cursor:pointer}
+
+/* Seitenfeld */
+#seite{position:absolute;top:14px;right:14px;width:270px;max-height:calc(100% - 100px);overflow:auto;background:rgba(13,26,43,.82);border:1px solid rgba(140,185,235,.28);
+  border-radius:12px;color:#dbe8f6;padding:12px 14px;font-size:13px;backdrop-filter:blur(6px)}
+#seite h3{margin:10px 0 6px;font-size:11px;letter-spacing:.9px;text-transform:uppercase;color:#8fb3da;font-weight:600}
+#seite h3:first-child{margin-top:0}
+.zeile{display:flex;align-items:center;gap:8px;padding:3px 0;line-height:1.25}
+.zeile input{accent-color:#6fa3dc;margin:0}
+.zeile .n{margin-left:auto;color:#8fb3da;font-family:var(--mono);font-size:12px}
+.farbe{width:12px;height:12px;border-radius:3px;flex:none;border:1px solid rgba(255,255,255,.35)}
+.klein{color:#8fb3da;font-size:11.5px;line-height:1.35;margin:2px 0 4px}
+.form{display:inline-block;width:14px;text-align:center;color:#cfe2f7}
+#seiteZu{position:absolute;top:8px;right:8px;border:0;background:none;color:#8fb3da;font-size:16px;padding:2px 6px}
+
+/* Fußleiste */
+#fuss{position:absolute;left:0;right:0;margin:0 auto;width:max-content;bottom:14px;display:flex;align-items:center;gap:8px;background:rgba(13,26,43,.86);
+  border:1px solid rgba(140,185,235,.28);border-radius:14px;padding:8px 10px;color:#dbe8f6;font-size:13px;backdrop-filter:blur(6px);max-width:calc(100% - 28px);flex-wrap:wrap;justify-content:center}
+.chip{border:1px solid rgba(140,185,235,.35);background:rgba(255,255,255,.04);color:#dbe8f6;border-radius:9px;padding:7px 11px;font-size:13px;white-space:nowrap}
+.chip:hover{background:rgba(120,170,230,.18)}
+.chip[aria-pressed=true]{background:#3f7cc0;border-color:#6fa3dc;color:#fff}
+.chip.haupt{background:#3f7cc0;border-color:#6fa3dc;color:#fff;font-weight:600;padding:8px 15px}
+.chip.haupt:hover{background:#4d8bd0}
+#fuss label{display:flex;align-items:center;gap:7px;padding:0 6px;color:#a9c4e2}
+#fuss input[type=range]{width:110px;accent-color:#6fa3dc}
+.trenner{width:1px;height:22px;background:rgba(140,185,235,.25);margin:0 2px}
+
+/* Karte zur Probe */
+#karte{position:absolute;left:14px;top:14px;width:300px;background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.45);padding:14px 16px;font-size:13.5px;display:none}
+#karte.auf{display:block;animation:rein .22s ease-out}
+@keyframes rein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#karte h2{margin:0 26px 2px 0;font-size:19px}
+#karte .ort{color:var(--muted);margin-bottom:10px}
+#karte .wert{border-radius:9px;padding:9px 11px;margin:8px 0;border:1px solid var(--line2);border-left-width:7px}
+#karte .wert b{font-size:19px;font-family:var(--mono);font-weight:600;display:block}
+#karte .wert span{font-size:12.5px;color:#3c4d5e}
+#karte dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:8px 0 0}
+#karte dt{color:var(--muted)}#karte dd{margin:0;overflow-wrap:anywhere}
+#karteZu{position:absolute;top:8px;right:8px;border:0;background:none;font-size:18px;color:var(--muted);padding:2px 8px}
+#profil{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+#profil summary{cursor:pointer;color:var(--accent2);font-size:13px}
+#profil table{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
+#profil td{padding:1.5px 0;vertical-align:middle}
+#profil td:nth-child(2){font-family:var(--mono);text-align:right;padding:0 6px;white-space:nowrap}
+#profil td:nth-child(3){width:34%}
+#profil i{display:block;height:7px;border-radius:3px;background:#7fa9d6;min-width:1px}
+
+/* Rundgang */
+#tour{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:none;align-items:center;gap:8px;background:rgba(13,26,43,.9);border:1px solid rgba(140,185,235,.35);
+  border-radius:12px;padding:7px 10px;color:#fff;font-size:13px}
+#tour.auf{display:flex}
+#tourText{min-width:150px;text-align:center}
+
+/* Start */
+#start{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(8,16,28,.35),rgba(8,16,28,.8));z-index:5}
+#start.weg{display:none}
+#start .box{background:#fff;border-radius:16px;padding:28px 32px;max-width:540px;box-shadow:0 20px 70px rgba(0,0,0,.55);text-align:center}
+#start h1{margin:6px 0 6px;font-size:28px}
+#start p{color:#44586c;line-height:1.5;margin:8px 0 18px;font-size:15px}
+#start .reihe{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+#start .btn{padding:11px 18px;font-size:15px}
+#start small{display:block;margin-top:16px;color:var(--muted);font-size:12.5px;line-height:1.45}
+#meldung{position:absolute;left:50%;top:64px;transform:translateX(-50%);background:#fff3d6;border:1px solid #e2b34f;color:#5b3a00;border-radius:10px;padding:10px 16px;font-size:14px;display:none;z-index:9;max-width:80%}
+#meldung.auf{display:block}
+#ziehen{position:absolute;inset:10px;border:3px dashed #6fa3dc;border-radius:16px;background:rgba(63,124,192,.18);display:none;align-items:center;justify-content:center;color:#fff;font-size:22px;z-index:8;pointer-events:none}
+#ziehen.auf{display:flex}
+#beispiel{position:absolute;left:14px;bottom:76px;background:#fff3d6;color:#5b3a00;border:1px solid #e2b34f;border-radius:8px;padding:5px 10px;font-size:12.5px;display:none}
+#beispiel.auf{display:block}
+@media (max-width:900px){#seite{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <svg viewBox="44 4 106 101" aria-hidden="true"><g fill="#363A90"><circle cx="93.44" cy="14.19" r="3.15"/><circle cx="117.44" cy="17.06" r="8.1"/><circle cx="75.19" cy="17.94" r="8.1"/><circle cx="94.56" cy="27.06" r="4.18"/><circle cx="130.94" cy="31.94" r="3.15"/><circle cx="60.44" cy="36.94" r="3.15"/><circle cx="119.81" cy="38.81" r="4.18"/><circle cx="71.81" cy="43.06" r="4.18"/><circle cx="102.31" cy="43.81" r="5.78"/><circle cx="139.94" cy="54.19" r="8.1"/><circle cx="54.06" cy="54.69" r="8.1"/><circle cx="86.56" cy="56.44" r="5.78"/><circle cx="103.81" cy="63.94" r="5.78"/><circle cx="121.94" cy="67.44" r="4.18"/><circle cx="74.44" cy="71.06" r="4.18"/><circle cx="133.94" cy="72.19" r="3.15"/><circle cx="62.81" cy="77.06" r="3.15"/><circle cx="99.81" cy="82.56" r="4.18"/><circle cx="119.44" cy="91.44" r="8.1"/><circle cx="75.81" cy="92.19" r="8.1"/><circle cx="99.81" cy="95.56" r="3.15"/></g><g stroke="#363A90"><line x1="93.44" y1="14.19" x2="117.44" y2="17.06" stroke-width="1.4"/><line x1="75.19" y1="17.94" x2="60.44" y2="36.94" stroke-width="1.4"/><line x1="130.94" y1="31.94" x2="139.94" y2="54.19" stroke-width="1.4"/><line x1="54.06" y1="54.69" x2="62.81" y2="77.06" stroke-width="1.4"/><line x1="133.94" y1="72.19" x2="119.44" y2="91.44" stroke-width="1.4"/><line x1="75.81" y1="92.19" x2="99.81" y2="95.56" stroke-width="1.4"/><line x1="94.56" y1="27.06" x2="102.31" y2="43.81" stroke-width="1.17"/><line x1="86.56" y1="56.44" x2="74.44" y2="71.06" stroke-width="1.17"/><line x1="103.81" y1="63.94" x2="121.94" y2="67.44" stroke-width="1.17"/></g></svg>
+  <div class="brand"><b>GlasKit</b><span>Das Gebäude aus Glas · Spektron</span></div>
+  <div id="projekt"><b id="pName">–</b><span id="pInfo"></span></div>
+  <button class="btn primary" id="ordner">Projektordner öffnen</button>
+  <button class="btn" id="datei">Plan-Datei öffnen …</button>
+  <input type="file" id="dateiWahl" accept=".probenplan,application/json" hidden>
+</header>
+<main id="buehne">
+  <canvas id="c" aria-label="Dreidimensionale Ansicht des Gebäudes mit Probenahmestellen"></canvas>
+  <aside id="seite">
+    <button id="seiteZu" title="Feld ausblenden" aria-label="Feld ausblenden">✕</button>
+    <h3>Geschosse</h3><div id="geschosse"></div>
+    <h3>Probenart</h3><div id="arten"></div>
+    <h3>Bewertung</h3><div id="legende"></div>
+    <h3>Höhe der Kugel</h3>
+    <div class="klein">oben = Untersicht (Decke) · Mitte = Ansicht (Wand) · unten = Aufsicht (Boden) · gestrichelter Stiel = Oberflächenart nicht angegeben</div>
+  </aside>
+  <div id="karte" role="dialog" aria-label="Probe">
+    <button id="karteZu" aria-label="Schließen">✕</button>
+    <h2 id="kTitel"></h2><div class="ort" id="kOrt"></div>
+    <div class="wert" id="kWert"><b id="kZahl"></b><span id="kStufe"></span></div>
+    <dl id="kListe"></dl>
+    <details id="profil"><summary>Alle Werte dieser Probe</summary><table id="pTab"></table></details>
+  </div>
+  <div id="tour"><button class="chip" id="tZur" aria-label="Vorherige Probe">◀</button><button class="chip" id="tPause">⏸ Pause</button><span id="tourText"></span><button class="chip" id="tVor" aria-label="Nächste Probe">▶</button><button class="chip" id="tEnde">Beenden</button></div>
+  <div id="fuss">
+    <button class="chip haupt" id="rundgang">▶ Rundgang starten</button>
+    <span class="trenner"></span>
+    <button class="chip" id="glas" aria-pressed="true" title="Glas: nur die Linien des Plans, alles andere durchsichtig">Glas</button>
+    <button class="chip" id="papier" aria-pressed="false" title="Papier: der Plan wie gedruckt">Papier</button>
+    <span class="trenner"></span>
+    <button class="chip" id="rauch" aria-pressed="true" title="Rauch am Brandherd – reine Dekoration, keine Berechnung">Rauch</button>
+    <button class="chip" id="dreh" aria-pressed="true" title="Langsam weiterdrehen">Drehen</button>
+    <button class="chip" id="werte" aria-pressed="false" title="Werte an den Kugeln zeigen">Werte</button>
+    <label title="Geschosse auseinanderziehen">Abstand <input type="range" id="abstand" min="0.5" max="3" step="0.05" value="1"></label>
+    <span class="trenner"></span>
+    <button class="chip" id="mitte" title="Ansicht zurücksetzen">Ganzes Gebäude</button>
+    <button class="chip" id="bild" title="Aktuelle Ansicht als Bild herunterladen">Bild speichern</button>
+  </div>
+  <div id="beispiel">Beispielgebäude – alle Werte frei erfunden</div>
+  <div id="meldung" role="status"></div>
+  <div id="ziehen">Plan-Datei hier ablegen</div>
+  <div id="start">
+    <div class="box">
+      <h1>Schau durch das Gebäude.</h1>
+      <p>GlasKit stapelt die Geschosse aus PlanKit zu einem gläsernen Modell. Jede Probe leuchtet an ihrer Stelle – in der Farbe ihrer Bewertung und in der Höhe, in der sie genommen wurde.</p>
+      <div class="reihe">
+        <button class="btn primary" id="sOrdner">Projektordner öffnen</button>
+        <button class="btn" id="sDatei">Plan-Datei öffnen …</button>
+        <button class="btn" id="sBeispiel">Beispielgebäude ansehen</button>
+      </div>
+      <small>GlasKit liest nur. Es wird nichts im Projektordner gespeichert oder geändert.<br>Werte und Bezeichnungen stehen so da wie im Prüfbericht.</small>
+    </div>
+  </div>
+</main>
+
+<script>
+'use strict';
+/* ================= Bewertung: aus PlanKit (src/results.ts) übernommen – dort ändern, hier mitändern ================= */
+const UNRATED='#c3ccd5',BELOW_LIMIT='#749bb5',NOT_DETECTED='#8b83a8',NOT_DETERMINED='#9d8975';
+function labNumber(raw){
+  const t=String(raw??'').trim().replace(/−/g,'-');
+  const match=t.match(/^([+-]?)([\d.,   ]+)([eE][+-]?\d+)?$/);if(!match)return NaN;
+  let body=match[2].trim();const exponent=match[3]||'';
+  if(/[   ]/.test(body)){
+    if(!/^\d{1,3}(?:[   ]\d{3})+(?:[.,]\d+)?$/.test(body))return NaN;
+    body=body.replace(/[   ]/g,'').replace(',','.');
+  }else if(body.includes('.')&&body.includes(',')){
+    const decimal=body.lastIndexOf('.')>body.lastIndexOf(',')?'.':',',group=decimal==='.'?',':'.';
+    const parts=body.split(decimal);if(parts.length!==2||!/^\d+$/.test(parts[1])||!new RegExp('^\\d{1,3}(?:\\'+group+'\\d{3})+$').test(parts[0]))return NaN;
+    body=parts[0].split(group).join('')+'.'+parts[1];
+  }else if(/[.,]/.test(body)){
+    const parts=body.split(/[.,]/);
+    if(parts.length===2){if(!/^\d+$/.test(parts[0])||!/^\d+$/.test(parts[1])||(parts[1].length===3&&/^[1-9]\d{0,2}$/.test(parts[0])))return NaN;body=parts.join('.');}
+    else{if(!/^\d{1,3}([.,])\d{3}(?:\1\d{3})+$/.test(body))return NaN;body=parts.join('');}
+  }
+  const v=Number(match[1]+body+exponent);return Number.isFinite(v)?v:NaN;
+}
+function labQualifier(raw){
+  let t=String(raw??'').trim();if(t.startsWith('(')&&t.endsWith(')'))t=t.slice(1,-1).trim();
+  if(/^unter\s+BG$/i.test(t))return 'below';
+  if(/^n\.\s*n\.$/i.test(t))return 'notDetected';
+  if(/^n\.\s*b\.$/i.test(t))return 'notDetermined';
+  if(t.startsWith('<')){const limit=labNumber(t.slice(1));return Number.isFinite(limit)&&limit>=0?'below':'unrated';}
+  return Number.isFinite(labNumber(raw))?'measured':'unrated';
+}
+let nutzung='';
+function vdsScale(parameter,unit,usage){
+  if(!usage||!(/^(?:Summe|Σ)\s*16\s*EPA[-– ]PAK(?:\s.*)?$/i.test(parameter)))return;
+  const u=unit.replace(/μ/g,'µ').replace(/²/g,'2').replace(/\s+/g,'').toLowerCase();
+  const factor=({'µg/m2':1,'µg/100cm2':.01,'mg/m2':.001,'ng/m2':1000})[u];if(!factor)return;
+  const limit=(usage==='residential'?10:100)*factor;
+  const label=usage==='industrial'?'Industrie':nutzung==='Gesundheit & Labor'?'Gesundheit & Labor, Referenz < 10 µg/m²':'Wohn-/Büroräume';
+  return {name:`VdS 2357 · ${label} · Hintergrundreferenz`,cats:[{name:'unter Referenzwert',from:0,color:'#4caf50'},{name:'Referenzwert erreicht/überschritten',from:limit,color:'#e0453a'}]};
+}
+/* KORROSION-CHLORID v2 */
+const CHLORID_JE_UG_CM2={'µg/cm2':1,'mg/m2':10,'µg/m2':10000,'mg/cm2':.001,'µg/100cm2':100,'mg/dm2':.1};
+const chloridEinheit=unit=>CHLORID_JE_UG_CM2[unit.replace(/μ/g,'µ').replace(/²/g,'2').replace(/\s+/g,'').toLowerCase()];
+function chloridScale(parameter,unit){
+  const f=/^Chlorid\b/i.test(parameter.trim())?chloridEinheit(unit):undefined;if(!f)return;
+  return {name:'VdS 2357 · Chlorid · korrosionschemisch relevant 5–10 µg/cm²',cats:[{name:'unterhalb der korrosionschemisch relevanten Größenordnung',from:0,color:'#4caf50'},
+    {name:'im Bereich der korrosionschemisch relevanten Größenordnung',from:5*f,color:'#f0a030'},{name:'oberhalb der korrosionschemisch relevanten Größenordnung',from:10*f,color:'#e0453a',ueber:true}]};
+}
+const stufeErreicht=(c,v)=>c.ueber?v>c.from:v>=c.from;
+function vdsRegel(eigen,vds){
+  if(!vds.cats.some(c=>c.ueber)||eigen.cats.length!==vds.cats.length||eigen.cats.some((c,i)=>Number(c.from)!==vds.cats[i].from))return eigen;
+  return {...eigen,cats:eigen.cats.map((c,i)=>vds.cats[i].ueber?{...c,ueber:true}:c)};
+}
+const FLAECHE=/\/\s*(?:\d+\s*)?(?:c|d)?m\s*(?:2|²)\s*$/i;
+const SUMME=/^(?:Summe|Σ)\s*16\s*EPA[-– ]?PAK/i,CHLORID=/^Chlorid\b/i;
+const ASBEST=/asbest|chrysotil|amosit|krokydolith|tremolit|aktinolith|anthophyllit/i;
+const POSITIV=/nachgewiesen|positiv|enthalten|gefunden|^ja$|chrysotil|amosit|krokydolith|tremolit|aktinolith|anthophyllit/i,NEGATIV=/nicht|kein|negativ|n\.\s*n\.|^<|unter/i;
+const GEHALT=/^asbestgehalt\b/i,ART=/^asbest(?:art)?\b/i;
+function asbestBefund(werte){
+  const a=werte.filter(w=>ASBEST.test(w.p)&&!/^[-–—]?$/.test(w.r.trim()));if(!a.length)return null;
+  const teil=w=>GEHALT.test(w.p.trim())?`${w.r.trim()}${w.u.trim()&&/\d/.test(w.r)?` ${w.u.trim()}`:''}`:ART.test(w.p.trim())?w.r.trim():`${w.p.trim()}: ${w.r.trim()}`;
+  const sortiert=[...a.filter(w=>!GEHALT.test(w.p.trim())),...a.filter(w=>GEHALT.test(w.p.trim()))];
+  const gehaltPositiv=w=>GEHALT.test(w.p.trim())&&/\d/.test(w.r)&&!/^\s*</.test(w.r)&&!NEGATIV.test(w.r.trim());
+  return {text:[...new Set(sortiert.map(teil))].join(' · '),gefunden:a.some(w=>(POSITIV.test(w.r.trim())&&!NEGATIV.test(w.r.trim()))||gehaltPositiv(w))};
+}
+const ASBEST_PARAM='Asbest';
+const ASBEST_SKALA={name:'Asbest laut Prüfbericht',cats:[{name:'kein Asbest nachgewiesen',from:0,color:'#4caf50'},{name:'Asbest nachgewiesen',from:1,color:'#ef9a9a'}]};
+function hauptwert(werte){
+  const w=werte||[],flaeche=c=>c.find(x=>FLAECHE.test(x.u))||c[0];
+  const summen=w.filter(x=>SUMME.test(x.p.trim()));if(summen.length){const exkl=summen.filter(x=>/exkl/i.test(x.p));return flaeche(exkl.length?exkl:summen);}
+  const cl=w.filter(x=>CHLORID.test(x.p.trim()));if(cl.length)return flaeche(cl);
+  const b=asbestBefund(w);if(b)return {p:ASBEST_PARAM,r:b.text.slice(0,40),u:''};
+  return undefined;
+}
+function rate(scale,value){if(!scale?.cats.length||!Number.isFinite(value)||value<0)return -1;let index=0;scale.cats.forEach((c,i)=>{if(i>0&&stufeErreicht(c,value))index=i;});return index;}
+function scaleFor(settings,parameter,unit){
+  if(parameter===ASBEST_PARAM&&!unit)return ASBEST_SKALA;
+  const key=`${parameter}|${unit}`,vds=(settings?.usage?vdsScale(parameter,unit,settings.usage):undefined)??chloridScale(parameter,unit);
+  if(vds){const eigen=settings?.vds?.[key];return eigen?vdsRegel(eigen,vds):vds;}
+  return settings?.scales?.[key];
+}
+const kurzParam=p=>p.replace(/^Summe 16 EPA-PAK.*$/i,'Σ16 EPA-PAK').replace(/^Chlorid\b.*$/i,'Chlorid');
+/** Bewertung einer Probe – immer „Automatisch – je Probenart“ (Hauptwert), wie ResultKits Ergebnisübersicht. */
+function bewerte(m,settings){
+  const werte=(m.lab?.werte||[]).filter(w=>w&&typeof w.p==='string'&&typeof w.r==='string').map(w=>({p:w.p,r:w.r,u:typeof w.u==='string'?w.u:''}));
+  const w=hauptwert(werte);
+  if(!w)return {farbe:UNRATED,stufe:m.lab?'kein bewerteter Wert':'noch kein Laborergebnis',gruppe:'ohne|'+(m.lab?'a':'b'),text:'',werte};
+  const scale=scaleFor(settings,w.p,w.u),text=`${w.r}${w.u?' '+w.u:''}`,basis={text,param:kurzParam(w.p),skala:scale?.name||'',werte,w};
+  if(w.p===ASBEST_PARAM&&!w.u){const c=ASBEST_SKALA.cats[asbestBefund(werte)?.gefunden?1:0];return {...basis,farbe:c.color,stufe:c.name,gruppe:'Asbest|'+c.name,hoch:c.from===1};}
+  const q=labQualifier(w.r);
+  if(q==='below')return {...basis,farbe:BELOW_LIMIT,stufe:'unter BG (kein gemessener Nullwert)',gruppe:'q|unter BG'};
+  if(q==='notDetected')return {...basis,farbe:NOT_DETECTED,stufe:'nicht nachgewiesen (n. n.)',gruppe:'q|n. n.'};
+  if(q==='notDetermined')return {...basis,farbe:NOT_DETERMINED,stufe:'nicht bestimmt (n. b.)',gruppe:'q|n. b.'};
+  const i=rate(scale,labNumber(w.r));
+  if(i<0)return {...basis,farbe:UNRATED,stufe:scale?'nicht bewertbar':'ohne Bewertung (keine Skala im Projekt)',gruppe:'ohne|'+(scale?'c':'d')};
+  const c=scale.cats[i];return {...basis,farbe:c.color,stufe:c.name,gruppe:kurzParam(w.p)+'|'+c.name,hoch:i===scale.cats.length-1&&scale.cats.length>1};
+}
+/* Probenart wie PlanKit (model.ts) */
+const TYPES=[[/^pak\b/i,'PAK','circle'],[/^chlorid\b/i,'Chlorid','square'],[/^asbest\b/i,'Asbest','diamond'],[/^sonstige\b/i,'Sonstige','circle']];
+function typVon(m){if(m.typ)return String(m.typ);const a=String(m.lab?.art||'').trim();for(const [re,typ] of TYPES)if(re.test(a))return typ;return '';}
+function formVon(m){if(['circle','square','diamond'].includes(m.shape))return m.shape;const t=typVon(m);return (TYPES.find(x=>x[1]===t)||[])[2]||'circle';}
+const SURFACE_NAMES={ceiling:'Untersicht',wall:'Ansicht',floor:'Aufsicht',other:'Sonstige'};
+const HOEHE={floor:.07,wall:.5,ceiling:.9,other:.3};
+
+/* ================= Plan-Vorbereitung wie PlanKit (src/preparation.ts) ================= */
+function mul(a,b){return [a[0]*b[0]+a[2]*b[1],a[1]*b[0]+a[3]*b[1],a[0]*b[2]+a[2]*b[3],a[1]*b[2]+a[3]*b[3],a[0]*b[4]+a[2]*b[5]+a[4],a[1]*b[4]+a[3]*b[5]+a[5]];}
+function planMatrix(plan){
+  const p=plan.preparation||{sourceWidth:plan.width,sourceHeight:plan.height,rotation:0,crop:{x:0,y:0,width:plan.width,height:plan.height}};
+  const a=p.angle||0;let s={width:p.sourceWidth,height:p.sourceHeight},fine=[1,0,0,1,0,0];
+  if(a){const r=a*Math.PI/180,c=Math.abs(Math.cos(r)),sn=Math.abs(Math.sin(r));s={width:p.sourceWidth*c+p.sourceHeight*sn,height:p.sourceWidth*sn+p.sourceHeight*c};
+    const cos=Math.cos(r),sin=Math.sin(r);fine=mul([1,0,0,1,s.width/2,s.height/2],mul([cos,sin,-sin,cos,0,0],[1,0,0,1,-p.sourceWidth/2,-p.sourceHeight/2]));}
+  const w=s.width,h=s.height,turns={0:[1,0,0,1,0,0],90:[0,1,-1,0,h,0],180:[-1,0,0,-1,w,h],270:[0,-1,1,0,0,w]};
+  const m=mul(turns[p.rotation]||turns[0],fine);m[4]-=p.crop.x;m[5]-=p.crop.y;
+  return {m,sw:p.sourceWidth,sh:p.sourceHeight};
+}
+
+/* ================= Zustand ================= */
+const $=id=>document.getElementById(id);
+const cv=$('c'),cx=cv.getContext('2d');
+const W=10;                    // längere Planseite in Welteinheiten
+const S={geschosse:[],name:'',demo:false,kam:{yaw:-.62,pitch:.56,zoom:1,tx:0,ty:0,tz:0},ziel:null,glas:true,rauch:true,dreh:true,werte:false,abstand:1,
+  artAus:new Set(),wahl:null,hover:null,treffer:[],t0:0,teilchen:[],tour:null,zuletzt:0,bewegt:0};
+const H=()=>3.1*S.abstand;
+const ease=t=>t<0?0:t>1?1:1-Math.pow(1-t,3);
+const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+
+function melde(text,ms=6000){const el=$('meldung');el.textContent=text;el.classList.add('auf');clearTimeout(melde.t);melde.t=setTimeout(()=>el.classList.remove('auf'),ms);}
+
+/* ================= Projekt laden ================= */
+function bildLaden(src){return new Promise((ok,nein)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>nein(Error('Der Plan in der Datei lässt sich nicht als Bild lesen.'));i.src=src;});}
+async function geschossBauen(name,plan,markers){
+  if(!plan||typeof plan.data!=='string'||!(plan.width>0)||!(plan.height>0))throw Error('In der Datei fehlt ein Plan.');
+  if(!/^data:image\//i.test(plan.data))throw Error('Der Plan in der Datei hat ein unbekanntes Format.');
+  const img=await bildLaden(plan.data),k=1500/Math.max(plan.width,plan.height);
+  const papier=document.createElement('canvas');papier.width=Math.max(1,Math.round(plan.width*k));papier.height=Math.max(1,Math.round(plan.height*k));
+  const g=papier.getContext('2d',{willReadFrequently:true});g.fillStyle='#fff';g.fillRect(0,0,papier.width,papier.height);
+  const {m,sw,sh}=planMatrix(plan);g.setTransform(k*m[0],k*m[1],k*m[2],k*m[3],k*m[4],k*m[5]);g.drawImage(img,0,0,sw,sh);g.setTransform(1,0,0,1,0,0);
+  // Glas: Helligkeit → Durchsicht. Weißes Papier verschwindet, Linien bleiben als helles Blau, kräftige Farben behalten ihren Ton.
+  let glas=null;
+  try{
+    const d=g.getImageData(0,0,papier.width,papier.height),p=d.data;
+    for(let i=0;i<p.length;i+=4){
+      const r=p[i],gr=p[i+1],b=p[i+2],mx=Math.max(r,gr,b),mn=Math.min(r,gr,b),lum=.299*r+.587*gr+.114*b,sat=mx-mn;
+      const a=Math.min(255,(255-lum)*1.35+sat*.9);
+      if(sat>60){const f=255/Math.max(mx,1);p[i]=Math.min(255,r*f*.9+25);p[i+1]=Math.min(255,gr*f*.9+25);p[i+2]=Math.min(255,b*f*.9+25);}
+      else{p[i]=176;p[i+1]=216;p[i+2]=255;}
+      p[i+3]=a;
+    }
+    glas=document.createElement('canvas');glas.width=papier.width;glas.height=papier.height;glas.getContext('2d').putImageData(d,0,0);
+  }catch{/* Bild nicht lesbar → nur Papieransicht */}
+  const mpu=plan.calibration&&plan.calibration.units>0&&plan.calibration.meters>0?plan.calibration.meters/plan.calibration.units:null;
+  const ms=(Array.isArray(markers)?markers:[]).filter(x=>x&&Number.isFinite(x.x)&&Number.isFinite(x.y)).map(x=>({...x,label:String(x.label??''),kind:x.kind==='fire'?'fire':'sample'}));
+  return {name,plan,papier,glas,mpu,marker:ms,sichtbar:true,pw:0,ph:0,deck:1};
+}
+async function projektLaden(p,name,demo=false){
+  if(!p||p.format!=='probenplan'||!p.plan)throw Error('Das ist keine PlanKit-Datei (*.probenplan).');
+  const liste=[];
+  if(Array.isArray(p.sheets)&&p.sheets.length){const akt=p.active??0;p.sheets.forEach((s,i)=>liste.push(i===akt?{name:s.name,plan:p.plan,markers:p.markers}:{name:s.name,plan:s.plan,markers:s.markers}));}
+  else liste.push({name:'',plan:p.plan,markers:p.markers});
+  const gs=[];for(const [i,s] of liste.entries()){if(!s.plan)continue;gs.push(await geschossBauen(s.name||(liste.length>1?`Plan ${i+1}`:'Plan'),s.plan,s.markers));}
+  if(!gs.length)throw Error('In der Datei ist kein Plan.');
+  // Größe: sind alle Pläne kalibriert, gilt der Maßstab (Geschosse passen dann in der Größe zueinander); sonst längere Seite = gleich breit.
+  const alle=gs.every(g=>g.mpu);
+  const gross=alle?Math.max(...gs.map(g=>Math.max(g.plan.width,g.plan.height)*g.mpu)):0;
+  for(const g of gs){const f=alle?g.mpu*W/gross:W/Math.max(g.plan.width,g.plan.height);g.pw=g.plan.width*f;g.ph=g.plan.height*f;}
+  // Wie PlanKit beim ersten Anlegen der Ergebniskarte: gibt es im Plan noch keine Einstellungen, wählt die Nutzung des Projekts die VdS-Referenz vor.
+  const ausNutzung=['Wohnen','Büro','Öffentlich','Gesundheit & Labor'].includes(nutzung)?'residential':['Gewerbe/Industrie','Landwirtschaft'].includes(nutzung)?'industrial':undefined;
+  const settings=p.results&&typeof p.results==='object'?p.results:ausNutzung?{usage:ausNutzung,parameter:'*',scales:{}}:undefined;
+  for(const g of gs)for(const m of g.marker)if(m.kind==='sample')m.b=bewerte(m,settings);
+  S.geschosse=gs;S.name=name;S.demo=demo;S.offen=Array.isArray(p.pending)?p.pending.length:0;S.massstab=alle;
+  S.wahl=null;S.artAus.clear();S.teilchen=[];tourEnde();karteZu();
+  S.kam={yaw:-1.5,pitch:.5,zoom:.62,tx:0,ty:0,tz:mitteZ()};S.ziel={...ganz(),dauer:2.6,t:0,von:{...S.kam}};S.t0=performance.now();
+  seiteFuellen();kopfFuellen();$('beispiel').classList.toggle('auf',demo);
+}
+const mitteZ=()=>(S.geschosse.length-1)*H()/2+H()*.3;
+const ganz=()=>({yaw:-.62,pitch:.56,zoom:S.geschosse.length>3?.7:.86,tx:0,ty:0,tz:mitteZ()});
+function kopfFuellen(){
+  const proben=S.geschosse.flatMap(g=>g.marker.filter(m=>m.kind==='sample'));
+  $('pName').textContent=S.name||'–';
+  $('pInfo').textContent=`${S.geschosse.length} ${S.geschosse.length===1?'Plan':'Geschosse'} · ${proben.length} Proben im Plan`+(S.offen?` · ${S.offen} noch nicht gesetzt`:'')+(S.massstab?'':' · nicht maßstäblich');
+}
+function seiteFuellen(){
+  const gEl=$('geschosse');gEl.textContent='';
+  [...S.geschosse].reverse().forEach(g=>{const l=document.createElement('label');l.className='zeile';const c=document.createElement('input');c.type='checkbox';c.checked=g.sichtbar;c.onchange=()=>{g.sichtbar=c.checked;};
+    const t=document.createElement('span');t.textContent=g.name;const n=document.createElement('span');n.className='n';n.textContent=g.marker.filter(m=>m.kind==='sample').length;l.append(c,t,n);gEl.append(l);});
+  const proben=S.geschosse.flatMap(g=>g.marker.filter(m=>m.kind==='sample'));
+  const aEl=$('arten');aEl.textContent='';const arten=new Map();for(const m of proben){const t=typVon(m)||'ohne Angabe';arten.set(t,(arten.get(t)||0)+1);}
+  const zeichen={circle:'●',square:'■',diamond:'◆'};
+  for(const [t,n] of arten){const l=document.createElement('label');l.className='zeile';const c=document.createElement('input');c.type='checkbox';c.checked=true;c.onchange=()=>{c.checked?S.artAus.delete(t):S.artAus.add(t);};
+    const f=document.createElement('span');f.className='form';f.textContent=zeichen[(TYPES.find(x=>x[1]===t)||[])[2]||'circle'];const s=document.createElement('span');s.textContent=t;const z=document.createElement('span');z.className='n';z.textContent=n;l.append(c,f,s,z);aEl.append(l);}
+  const lEl=$('legende');lEl.textContent='';const gruppen=new Map();
+  for(const m of proben){const k=m.b.gruppe;if(!gruppen.has(k))gruppen.set(k,{farbe:m.b.farbe,stufe:m.b.stufe,param:/^(q|ohne)\|/.test(k)?'':m.b.param,n:0});gruppen.get(k).n++;}
+  let letzter=null;
+  for(const g of [...gruppen.values()].sort((a,b)=>(a.param||'~').localeCompare(b.param||'~'))){
+    if(g.param&&g.param!==letzter){const k=document.createElement('div');k.className='klein';k.style.marginTop='6px';k.textContent=g.param;lEl.append(k);letzter=g.param;}
+    const z=document.createElement('div');z.className='zeile';const f=document.createElement('span');f.className='farbe';f.style.background=g.farbe;const s=document.createElement('span');s.textContent=g.stufe;const n=document.createElement('span');n.className='n';n.textContent=g.n;z.append(f,s,n);lEl.append(z);}
+  if(!proben.length){const k=document.createElement('div');k.className='klein';k.textContent='In diesem Plan sind noch keine Proben gesetzt.';lEl.append(k);}
+  const brand=S.geschosse.some(g=>g.marker.some(m=>m.kind==='fire'));$('rauch').style.display=brand?'':'none';
+}
+
+/* ---------- Dateien ---------- */
+async function dateiLesen(file,name){
+  try{const p=JSON.parse(await file.text());nutzung=nutzung||'';await projektLaden(p,name||file.name.replace(/^Probenplan\s+/i,'').replace(/\.probenplan$/i,''));$('start').classList.add('weg');}
+  catch(e){melde(e instanceof SyntaxError?'Die Datei lässt sich nicht lesen (kein gültiges PlanKit-Format).':e.message||String(e),9000);}
+}
+async function unterordner(dir,pfad){let d=dir;for(const n of pfad){try{d=await d.getDirectoryHandle(n);}catch{return null;}}return d;}
+async function ordnerOeffnen(){
+  if(!window.showDirectoryPicker){melde('Dieser Browser kann keine Ordner öffnen. Bitte Edge oder Chrome benutzen – oder „Plan-Datei öffnen …“.');return;}
+  let dir;try{dir=await window.showDirectoryPicker({mode:'read',id:'glaskit'});}catch{return;}
+  // Haupt-Datei wie PlanKit: „Probenplan <Ordner>.probenplan“ in _Spektron/PlanKit (neu) oder Pläne (früher). Kopien „(… ).probenplan“ zählen nicht.
+  const funde=[];
+  for(const pfad of [['_Spektron','PlanKit'],['Pläne'],[]]){const d=await unterordner(dir,pfad);if(!d)continue;
+    for await(const h of d.values())if(h.kind==='file'&&/\.probenplan$/i.test(h.name)){const f=await h.getFile();funde.push({f,haupt:!/\)\.probenplan$/i.test(h.name),neu:pfad.length===2});}
+    if(funde.some(x=>x.haupt))break;}
+  if(!funde.length){melde(`In „${dir.name}“ liegt noch kein Plan aus PlanKit. Bitte den Projektordner wählen (z. B. „26.0560 Stollenstr. Gladbeck Dr.Ka“) – oder erst in PlanKit einen Plan anlegen.`,10000);return;}
+  funde.sort((a,b)=>(b.haupt-a.haupt)||(b.f.lastModified-a.f.lastModified));
+  nutzung='';try{const sp=await unterordner(dir,['_Spektron']);const h=await (sp||dir).getFileHandle('_Projekt.json');const pj=JSON.parse(await (await h.getFile()).text());if(typeof pj.nutzung==='string')nutzung=pj.nutzung.trim();}catch{/* ohne Projektdaten */}
+  await dateiLesen(funde[0].f,dir.name);
+}
+$('ordner').onclick=$('sOrdner').onclick=ordnerOeffnen;
+$('datei').onclick=$('sDatei').onclick=()=>$('dateiWahl').click();
+$('dateiWahl').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f){nutzung='';dateiLesen(f);}};
+$('sBeispiel').onclick=()=>{$('start').classList.add('weg');S.kam={yaw:-1.5,pitch:.5,zoom:.62,tx:0,ty:0,tz:mitteZ()};S.ziel={...ganz(),dauer:2.6,t:0,von:{...S.kam}};S.t0=performance.now();S.teilchen=[];};
+addEventListener('dragover',e=>{e.preventDefault();$('ziehen').classList.add('auf');});
+addEventListener('dragleave',e=>{if(!e.relatedTarget)$('ziehen').classList.remove('auf');});
+addEventListener('drop',e=>{e.preventDefault();$('ziehen').classList.remove('auf');const f=e.dataTransfer.files[0];if(f){nutzung='';dateiLesen(f);}});
+
+/* ================= Projektion (Parallelprojektion – Pläne bleiben exakt, läuft ohne WebGL) ================= */
+let dpr=1,bw=0,bh=0;
+function groesse(){dpr=Math.min(2,devicePixelRatio||1);const r=cv.getBoundingClientRect();bw=r.width;bh=r.height;cv.width=Math.round(bw*dpr);cv.height=Math.round(bh*dpr);}
+addEventListener('resize',groesse);
+const massstab=()=>Math.min(bw,bh*1.25)/(W*1.75)*S.kam.zoom;
+function proj(x,y,z){const k=S.kam,c=Math.cos(k.yaw),s=Math.sin(k.yaw),sc=massstab(),dx=x-k.tx,dy=y-k.ty,dz=z-k.tz;const xr=dx*c-dy*s,yr=dx*s+dy*c;
+  return {x:bw/2+sc*xr,y:bh*.46+sc*(yr*Math.sin(k.pitch)-dz*Math.cos(k.pitch)),t:yr};}
+function geschossZ(i,jetzt){const d=ease((jetzt-S.t0)/1000/.9-i*.38);return {z:i*H()+(1-d)*7,a:d};}
+function markerWelt(g,m){return {x:(m.x/g.plan.width-.5)*g.pw,y:(m.y/g.plan.height-.5)*g.ph};}
+
+/* ================= Zeichnen ================= */
+function hintergrund(){
+  const gr=cx.createRadialGradient(bw/2,bh*.45,0,bw/2,bh*.45,Math.max(bw,bh)*.75);gr.addColorStop(0,'#17304f');gr.addColorStop(.55,'#0e1f36');gr.addColorStop(1,'#081220');
+  cx.fillStyle=gr;cx.fillRect(0,0,bw,bh);
+  // Bodenraster
+  const z=-.02,n=9,e=W*.9;cx.lineWidth=1;
+  for(let i=-n;i<=n;i++){const a=1-Math.abs(i)/n;cx.strokeStyle=`rgba(120,170,230,${.11*a})`;
+    let p=proj(i*e/n*1.6,-e*1.6,z),q=proj(i*e/n*1.6,e*1.6,z);cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(q.x,q.y);cx.stroke();
+    p=proj(-e*1.6,i*e/n*1.6,z);q=proj(e*1.6,i*e/n*1.6,z);cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(q.x,q.y);cx.stroke();}
+}
+function ecken(g,z){const a=g.pw/2,b=g.ph/2;return [proj(-a,-b,z),proj(a,-b,z),proj(a,b,z),proj(-a,b,z)];}
+function platte(g,i,z,alpha){
+  const k=S.kam,c=Math.cos(k.yaw),s=Math.sin(k.yaw),sc=massstab(),sp=Math.sin(k.pitch),bild=S.glas&&g.glas?g.glas:g.papier;
+  const o=proj(-g.pw/2,-g.ph/2,z),ux=g.pw/bild.width,vy=g.ph/bild.height;
+  const E=ecken(g,z);
+  cx.save();cx.globalAlpha=alpha;
+  // Schatten/Glaskante
+  cx.beginPath();E.forEach((p,j)=>j?cx.lineTo(p.x,p.y+5):cx.moveTo(p.x,p.y+5));cx.closePath();cx.fillStyle='rgba(4,10,20,.35)';cx.fill();
+  cx.beginPath();E.forEach((p,j)=>j?cx.lineTo(p.x,p.y):cx.moveTo(p.x,p.y));cx.closePath();
+  cx.fillStyle=S.glas&&g.glas?'rgba(70,130,205,.13)':'rgba(255,255,255,.93)';cx.fill();
+  cx.save();cx.transform(sc*c*ux,sc*s*sp*ux,-sc*s*vy,sc*c*sp*vy,o.x,o.y);cx.imageSmoothingQuality='high';
+  if(!(S.glas&&g.glas))cx.globalAlpha=alpha*.95;
+  cx.drawImage(bild,0,0);cx.restore();
+  cx.beginPath();E.forEach((p,j)=>j?cx.lineTo(p.x,p.y):cx.moveTo(p.x,p.y));cx.closePath();
+  cx.strokeStyle='rgba(150,205,255,.85)';cx.lineWidth=1.4;cx.shadowColor='rgba(110,180,255,.9)';cx.shadowBlur=10;cx.stroke();cx.shadowBlur=0;
+  // Geschossname an der vordersten Ecke
+  const vorn=E.reduce((a,b)=>b.y>a.y?b:a);cx.font='600 13px '+SCHRIFT;const tw=cx.measureText(g.name).width+16;
+  cx.fillStyle='rgba(13,26,43,.85)';rund(vorn.x-tw/2,vorn.y+10,tw,22,7);cx.fill();cx.strokeStyle='rgba(140,185,235,.5)';cx.lineWidth=1;cx.stroke();
+  cx.fillStyle='#dbe8f6';cx.textAlign='center';cx.textBaseline='middle';cx.fillText(g.name,vorn.x,vorn.y+21.5);
+  cx.restore();
+}
+const SCHRIFT="'IBM Plex Sans','Segoe UI',system-ui,sans-serif";
+function rund(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath();}
+function hell(hex,a){const n=parseInt(hex.slice(1),16);return `rgba(${n>>16},${n>>8&255},${n&255},${a})`;}
+function kugel(m,g,z,jetzt,ein){
+  const w=markerWelt(g,m),fr=HOEHE[m.surface]??.3,fuss=proj(w.x,w.y,z),kopf=proj(w.x,w.y,z+fr*H()),b=m.b,gew=S.wahl===m,hov=S.hover===m;
+  const r=Math.max(6,Math.min(15,massstab()*.16))*ein*(gew?1.35:hov?1.18:1),puls=b.hoch?1+.1*Math.sin(jetzt/420+m.x):1;
+  // Stiel und Fußpunkt
+  cx.strokeStyle=hell(b.farbe,.75);cx.lineWidth=1.6;cx.setLineDash(m.surface&&HOEHE[m.surface]!==undefined?[]:[4,4]);cx.beginPath();cx.moveTo(fuss.x,fuss.y);cx.lineTo(kopf.x,kopf.y);cx.stroke();cx.setLineDash([]);
+  cx.beginPath();cx.ellipse(fuss.x,fuss.y,r*.75,r*.75*Math.sin(S.kam.pitch),0,0,7);cx.fillStyle=hell(b.farbe,.35);cx.fill();cx.strokeStyle=hell(b.farbe,.9);cx.lineWidth=1;cx.stroke();
+  // Leuchten
+  cx.globalCompositeOperation='lighter';const gl=cx.createRadialGradient(kopf.x,kopf.y,0,kopf.x,kopf.y,r*3.4*puls);gl.addColorStop(0,hell(b.farbe,b.hoch?.6:.4));gl.addColorStop(1,hell(b.farbe,0));
+  cx.fillStyle=gl;cx.beginPath();cx.arc(kopf.x,kopf.y,r*3.4*puls,0,7);cx.fill();cx.globalCompositeOperation='source-over';
+  // Körper in der Form der Probenart (wie in PlanKit: Kreis PAK, Quadrat Chlorid, Raute Asbest)
+  const f=formVon(m);cx.beginPath();
+  if(f==='square')cx.rect(kopf.x-r*.9,kopf.y-r*.9,r*1.8,r*1.8);
+  else if(f==='diamond'){cx.moveTo(kopf.x,kopf.y-r*1.2);cx.lineTo(kopf.x+r*1.1,kopf.y);cx.lineTo(kopf.x,kopf.y+r*1.2);cx.lineTo(kopf.x-r*1.1,kopf.y);cx.closePath();}
+  else cx.arc(kopf.x,kopf.y,r,0,7);
+  const kg=cx.createRadialGradient(kopf.x-r*.35,kopf.y-r*.4,r*.1,kopf.x,kopf.y,r*1.3);kg.addColorStop(0,'#fff');kg.addColorStop(.25,b.farbe);kg.addColorStop(1,b.farbe);
+  cx.fillStyle=kg;cx.fill();cx.lineWidth=gew?3:1.6;cx.strokeStyle=gew?'#fff':'rgba(255,255,255,.85)';cx.stroke();
+  if(gew){cx.beginPath();cx.arc(kopf.x,kopf.y,r*1.9+2*Math.sin(jetzt/300),0,7);cx.strokeStyle='rgba(255,255,255,.7)';cx.lineWidth=1.5;cx.setLineDash([5,4]);cx.stroke();cx.setLineDash([]);}
+  // Beschriftung
+  cx.font='600 12.5px '+SCHRIFT;cx.textAlign='left';cx.textBaseline='middle';const text=S.werte&&b.text?`${m.label}  ${b.text}`:m.label;
+  cx.lineWidth=3.5;cx.strokeStyle='rgba(6,14,26,.85)';cx.strokeText(text,kopf.x+r+6,kopf.y);cx.fillStyle='#fff';cx.fillText(text,kopf.x+r+6,kopf.y);
+  S.treffer.push({m,g,x:kopf.x,y:kopf.y,r:r+5});
+}
+function brand(m,g,z,jetzt){
+  const w=markerWelt(g,m),p=proj(w.x,w.y,z+.05),r=Math.max(10,massstab()*.3);
+  cx.globalCompositeOperation='lighter';
+  for(let i=0;i<7;i++){const ph=jetzt/260+i*1.7+m.x,h=r*(1.1+.7*Math.sin(ph)*Math.sin(ph*.37+i)),ox=Math.sin(ph*1.3+i)*r*.28;
+    const gr=cx.createRadialGradient(p.x+ox,p.y-h*.45,0,p.x+ox,p.y-h*.45,r*(.9-i*.07));gr.addColorStop(0,`rgba(255,${200-i*14},${90-i*10},.5)`);gr.addColorStop(1,'rgba(255,80,10,0)');
+    cx.fillStyle=gr;cx.beginPath();cx.ellipse(p.x+ox,p.y-h*.45,r*(.55-i*.04),h*.75,0,0,7);cx.fill();}
+  const gl=cx.createRadialGradient(p.x,p.y,0,p.x,p.y,r*3.2);gl.addColorStop(0,'rgba(255,120,30,.35)');gl.addColorStop(1,'rgba(255,90,10,0)');cx.fillStyle=gl;cx.beginPath();cx.ellipse(p.x,p.y,r*3.2,r*3.2*Math.sin(S.kam.pitch),0,0,7);cx.fill();
+  cx.globalCompositeOperation='source-over';
+  cx.font='600 12px '+SCHRIFT;cx.textAlign='center';cx.textBaseline='top';cx.lineWidth=3.5;cx.strokeStyle='rgba(6,14,26,.85)';cx.strokeText('Brandherd',p.x,p.y+r*.5);cx.fillStyle='#ffd9b8';cx.fillText('Brandherd',p.x,p.y+r*.5);
+}
+function rauchSchritt(dt,jetzt){
+  const oben=S.geschosse.length*H()+1.5;
+  if(S.rauch&&(jetzt-S.t0)>S.geschosse.length*380+900)S.geschosse.forEach((g,i)=>{if(!g.sichtbar)return;for(const m of g.marker)if(m.kind==='fire'&&S.teilchen.length<420&&Math.random()<dt*26){const w=markerWelt(g,m);
+    S.teilchen.push({x:w.x+(Math.random()-.5)*.3,y:w.y+(Math.random()-.5)*.3,z:i*H()+.2,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,vz:.55+Math.random()*.5,a:0,g:.25+Math.random()*.3,k:Math.random()*9});}});
+  for(const t of S.teilchen){t.a+=dt;const n=jetzt/1700+t.k;t.x+=(t.vx+Math.sin(n+t.z*.8)*.22)*dt;t.y+=(t.vy+Math.cos(n*1.3+t.z*.6)*.22)*dt;t.z+=t.vz*dt;t.g+=dt*.16;}
+  S.teilchen=S.teilchen.filter(t=>t.z<oben&&t.a<9);
+}
+function rauchZeichnen(von,bis){
+  const sc=massstab(),oben=S.geschosse.length*H()+1.5;
+  for(const t of S.teilchen){if(t.z<von||t.z>=bis)continue;const p=proj(t.x,t.y,t.z),r=t.g*sc,al=Math.min(1,t.a*1.5)*Math.max(0,1-t.z/oben)*(S.wahl?.035:.1);
+    const gr=cx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);gr.addColorStop(0,`rgba(190,200,215,${al})`);gr.addColorStop(1,'rgba(190,200,215,0)');cx.fillStyle=gr;cx.beginPath();cx.arc(p.x,p.y,r,0,7);cx.fill();}
+}
+function bild(jetzt){
+  cx.setTransform(dpr,0,0,dpr,0,0);hintergrund();S.treffer=[];
+  const gs=S.geschosse,n=gs.length;
+  // Eckpfosten: machen aus den Platten ein Gebäude
+  for(let i=0;i<n-1;i++){if(!gs[i].sichtbar||!gs[i+1].sichtbar)continue;const a=geschossZ(i,jetzt),b=geschossZ(i+1,jetzt);if(b.a<.99)continue;const A=ecken(gs[i],a.z),B=ecken(gs[i+1],b.z);
+    cx.strokeStyle='rgba(140,195,255,.22)';cx.lineWidth=1;for(let j=0;j<4;j++){cx.beginPath();cx.moveTo(A[j].x,A[j].y);cx.lineTo(B[j].x,B[j].y);cx.stroke();}}
+  gs.forEach((g,i)=>{
+    const {z,a}=geschossZ(i,jetzt);
+    if(g.sichtbar&&a>0){
+      platte(g,i,z,a*g.deck);
+      const start=S.t0+n*380+700,liste=g.marker.filter(m=>m.kind==='fire'||!S.artAus.has(typVon(m)||'ohne Angabe')).map(m=>({m,t:proj(...Object.values(markerWelt(g,m)),z).t})).sort((p,q)=>p.t-q.t);
+      liste.forEach(({m},j)=>{const ein=ease((jetzt-start-(i*5+j)*90)/450);if(ein<=0||g.deck<.5)return;if(m.kind==='fire')brand(m,g,z,jetzt);else kugel(m,g,z,jetzt,ein);});
+    }
+    rauchZeichnen(i===0?-1:i*H(),i===n-1?1e9:(i+1)*H());
+  });
+}
+
+/* ================= Kamera, Schleife ================= */
+function kamSchritt(dt){
+  const z=S.ziel,k=S.kam;
+  if(z){z.t+=dt/z.dauer;const e=easeIO(Math.min(1,z.t));for(const f of ['yaw','pitch','zoom','tx','ty','tz'])k[f]=z.von[f]+(z[f]-z.von[f])*e;if(z.t>=1)S.ziel=null;}
+  else if(S.dreh&&!zieh&&performance.now()-S.bewegt>2500&&!S.wahl)k.yaw+=dt*.07;
+  // Schnitt: ist eine Probe gewählt, werden die Geschosse darüber fast durchsichtig – der Blick auf die Probe ist frei.
+  const wi=S.wahl?S.geschosse.findIndex(g=>g.marker.includes(S.wahl)):-1;S.geschosse.forEach((g,i)=>{const soll=wi>=0&&i>wi?.1:1;g.deck+=(soll-g.deck)*Math.min(1,dt*5);});
+}
+function fliege(zu,dauer=1.3){S.ziel={...S.kam,...zu,dauer,t:0,von:{...S.kam}};}
+function schleife(jetzt){
+  requestAnimationFrame(schleife);
+  const dt=Math.min(.1,(jetzt-S.zuletzt)/1000);if(dt<.03)return;S.zuletzt=jetzt;
+  if(!bw)groesse();
+  kamSchritt(dt);tourSchritt(dt);rauchSchritt(dt,jetzt);bild(jetzt);
+}
+
+/* ---------- Maus ---------- */
+let zieh=null;
+function trifft(e){const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;for(let i=S.treffer.length-1;i>=0;i--){const t=S.treffer[i];if(Math.hypot(t.x-x,t.y-y)<=t.r)return t;}return null;}
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);zieh={x:e.clientX,y:e.clientY,weg:0,schieben:e.button===2||e.button===1||e.shiftKey};S.ziel=null;cv.classList.add('drag');});
+cv.addEventListener('pointermove',e=>{
+  if(!zieh){const t=trifft(e);S.hover=t?t.m:null;cv.classList.toggle('hit',!!t);return;}
+  const dx=e.clientX-zieh.x,dy=e.clientY-zieh.y;zieh.x=e.clientX;zieh.y=e.clientY;zieh.weg+=Math.abs(dx)+Math.abs(dy);S.bewegt=performance.now();
+  const k=S.kam;
+  if(zieh.schieben){const sc=massstab(),c=Math.cos(k.yaw),s=Math.sin(k.yaw);k.tx-=dx/sc*c;k.ty+=dx/sc*s;k.tz+=dy/sc/Math.max(.25,Math.cos(k.pitch));}
+  else{k.yaw-=dx*.006;k.pitch=Math.max(.16,Math.min(1.45,k.pitch+dy*.005));}
+});
+cv.addEventListener('pointerup',e=>{cv.classList.remove('drag');const z=zieh;zieh=null;if(z&&z.weg<5){const t=trifft(e);if(t){if(S.tour)tourEnde();waehle(t.m,t.g,true);}else if(!S.tour)karteZu();}});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('wheel',e=>{e.preventDefault();S.ziel=null;S.bewegt=performance.now();S.kam.zoom=Math.max(.35,Math.min(6,S.kam.zoom*Math.exp(-e.deltaY*.0012)));},{passive:false});
+addEventListener('keydown',e=>{
+  if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)&&e.target.type!=='range')return;
+  const k=S.kam;S.bewegt=performance.now();
+  if(e.key==='Escape'){S.tour?tourEnde():karteZu();}
+  else if(e.key===' '&&S.tour){e.preventDefault();tourPause();}
+  else if(e.key==='ArrowLeft'){S.tour?tourGeh(-1):(k.yaw+=.12);}
+  else if(e.key==='ArrowRight'){S.tour?tourGeh(1):(k.yaw-=.12);}
+  else if(e.key==='ArrowUp')k.pitch=Math.min(1.45,k.pitch+.06);
+  else if(e.key==='ArrowDown')k.pitch=Math.max(.16,k.pitch-.06);
+  else if(e.key==='+'||e.key==='=')k.zoom=Math.min(6,k.zoom*1.15);
+  else if(e.key==='-')k.zoom=Math.max(.35,k.zoom/1.15);
+});
+
+/* ---------- Karte ---------- */
+function waehle(m,g,flug){
+  S.wahl=m;const b=m.b,i=S.geschosse.indexOf(g);
+  $('kTitel').textContent=`Probe ${m.label}`;
+  $('kOrt').textContent=[g.name,m.raum].filter(Boolean).join(' · ')||'–';
+  const kw=$('kWert');kw.style.borderLeftColor=b.farbe;kw.style.background=hell(b.farbe,.12);
+  $('kZahl').textContent=b.text?`${b.param}: ${b.text}`:'–';$('kStufe').textContent=b.stufe+(b.skala?` – ${b.skala}`:'');
+  const dl=$('kListe');dl.textContent='';const zeile=(k,v)=>{if(!v)return;const dt=document.createElement('dt');dt.textContent=k;const dd=document.createElement('dd');dd.textContent=v;dl.append(dt,dd);};
+  zeile('Probenart',m.lab?.art||typVon(m));zeile('Oberfläche',SURFACE_NAMES[m.surface]||'nicht angegeben');zeile('Bezeichnung',m.lab?.desc);zeile('Notiz',m.note);zeile('Labornummer',m.lab?.labNr);zeile('Prüfbericht',m.lab?.bericht);zeile('Datum',m.lab?.datum);
+  const tab=$('pTab');tab.textContent='';const einheit=b.w?.u,zahlen=b.werte.filter(w=>w.u===einheit&&!SUMME.test(w.p.trim())).map(w=>labNumber(w.r)).filter(Number.isFinite),mx=Math.max(0,...zahlen);
+  for(const w of b.werte){const tr=document.createElement('tr'),a=document.createElement('td'),c=document.createElement('td'),d=document.createElement('td');a.textContent=w.p;c.textContent=`${w.r} ${w.u}`.trim();
+    const v=labNumber(w.r);if(mx>0&&w.u===einheit&&!SUMME.test(w.p.trim())&&Number.isFinite(v)&&labQualifier(w.r)==='measured'){const s=document.createElement('i');s.style.width=Math.max(1,v/mx*100)+'%';d.append(s);}
+    tr.append(a,c,d);tab.append(tr);}
+  $('profil').style.display=b.werte.length>1?'':'none';$('profil').open=false;
+  $('karte').classList.remove('auf');void $('karte').offsetWidth;$('karte').classList.add('auf');
+  if(flug){const w=markerWelt(g,m);fliege({tx:w.x,ty:w.y,tz:i*H()+H()*.45,zoom:Math.max(S.kam.zoom,1.9)},1.1);}
+}
+function karteZu(){S.wahl=null;$('karte').classList.remove('auf');}
+$('karteZu').onclick=()=>{S.tour?tourEnde():karteZu();};
+
+/* ---------- Rundgang ---------- */
+function tourStopps(){const out=[];S.geschosse.forEach((g,i)=>{if(!g.sichtbar)return;g.marker.filter(m=>m.kind==='sample'&&!S.artAus.has(typVon(m)||'ohne Angabe')).sort((a,b)=>a.label.localeCompare(b.label,'de',{numeric:true})).forEach(m=>out.push({m,g,i}));});return out;}
+function tourStart(){const st=tourStopps();if(!st.length){melde('Für einen Rundgang braucht es mindestens eine gesetzte Probe.');return;}S.tour={st,i:-1,rest:0,pause:false};$('tour').classList.add('auf');$('rundgang').textContent='■ Rundgang beenden';tourGeh(1);}
+function tourGeh(d){const T=S.tour;if(!T)return;T.i+=d;if(T.i>=T.st.length){tourEnde();return;}if(T.i<0)T.i=0;const s=T.st[T.i],w=markerWelt(s.g,s.m);
+  waehle(s.m,s.g,false);fliege({tx:w.x,ty:w.y,tz:s.i*H()+H()*.45,zoom:1.75,yaw:S.kam.yaw-.55,pitch:.52},1.6);T.rest=5.2;$('tourText').textContent=`${T.i+1} von ${T.st.length} · ${s.g.name}`;}
+function tourSchritt(dt){const T=S.tour;if(!T||T.pause)return;if(!S.ziel)S.kam.yaw-=dt*.05;T.rest-=dt;if(T.rest<=0)tourGeh(1);}
+function tourPause(){const T=S.tour;if(!T)return;T.pause=!T.pause;$('tPause').textContent=T.pause?'▶ Weiter':'⏸ Pause';}
+function tourEnde(){if(!S.tour)return;S.tour=null;$('tour').classList.remove('auf');$('tPause').textContent='⏸ Pause';$('rundgang').textContent='▶ Rundgang starten';karteZu();fliege(ganz(),1.8);}
+$('rundgang').onclick=()=>S.tour?tourEnde():tourStart();
+$('tVor').onclick=()=>tourGeh(1);$('tZur').onclick=()=>tourGeh(-1);$('tPause').onclick=tourPause;$('tEnde').onclick=tourEnde;
+
+/* ---------- Fußleiste ---------- */
+const druck=(el,an)=>el.setAttribute('aria-pressed',an);
+$('glas').onclick=()=>{S.glas=true;druck($('glas'),true);druck($('papier'),false);};
+$('papier').onclick=()=>{S.glas=false;druck($('glas'),false);druck($('papier'),true);};
+$('rauch').onclick=()=>{S.rauch=!S.rauch;druck($('rauch'),S.rauch);if(!S.rauch)S.teilchen=[];};
+$('dreh').onclick=()=>{S.dreh=!S.dreh;druck($('dreh'),S.dreh);};
+$('werte').onclick=()=>{S.werte=!S.werte;druck($('werte'),S.werte);};
+$('abstand').oninput=e=>{const alt=H();S.abstand=Number(e.target.value);S.kam.tz*=H()/alt;for(const t of S.teilchen)t.z*=H()/alt;};
+$('mitte').onclick=()=>{if(S.tour)tourEnde();else{karteZu();fliege(ganz(),1.2);}};
+$('seiteZu').onclick=()=>{$('seite').style.display='none';};
+$('bild').onclick=()=>{
+  bild(performance.now());
+  const c=document.createElement('canvas');c.width=cv.width;c.height=cv.height;const g=c.getContext('2d');g.drawImage(cv,0,0);
+  const fs=13*dpr;g.font=`${fs}px ${SCHRIFT}`;g.fillStyle='rgba(8,18,32,.75)';g.fillRect(0,c.height-fs*2.2,c.width,fs*2.2);g.fillStyle='#dbe8f6';g.textBaseline='middle';
+  g.fillText(`${S.demo?'BEISPIEL – Werte frei erfunden · ':''}${S.name} · Darstellung ${S.massstab?'':'nicht maßstäblich, '}zur Veranschaulichung · Werte laut Prüfbericht · Rauch nur Dekoration · GlasKit / Spektron`,fs,c.height-fs*1.1);
+  c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`GlasKit ${S.name.replace(/[\\/:*?"<>|]/g,'_')||'Ansicht'}.png`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);},'image/png');
+};
+
+/* ================= Beispielgebäude (frei erfunden, im PlanKit-Format – läuft durch denselben Weg wie ein echtes Projekt) ================= */
+function beispiel(){
+  const svg=(raeume,extra='')=>{const t=raeume.map(([x,y,w,h,n,f])=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f?'#fbe7d8':'#fff'}" stroke="#1f1f1f" stroke-width="10"/><text x="${x+w/2}" y="${y+h/2}" font-family="Arial" font-size="30" text-anchor="middle" fill="${f?'#8a3f10':'#333'}">${n}</text>${f?`<text x="${x+w/2}" y="${y+h/2+34}" font-family="Arial" font-size="21" text-anchor="middle" fill="#8a3f10">Brandraum</text>`:''}`).join('');
+    return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800"><rect width="1200" height="800" fill="#fff"/>${t}${extra}</svg>`);};
+  const tueren='<g fill="#fff"><rect x="330" y="395" width="90" height="12"/><rect x="760" y="395" width="90" height="12"/><rect x="595" y="150" width="12" height="90"/><rect x="595" y="560" width="12" height="90"/></g>';
+  const pak=[['Naphthalin',.06],['Acenaphthylen',.03],['Acenaphthen',.01],['Fluoren',.03],['Phenanthren',.19],['Anthracen',.03],['Fluoranthen',.17],['Pyren',.14],['Benzo[a]anthracen',.06],['Chrysen',.07],['Benzo[b]fluoranthen',.07],['Benzo[k]fluoranthen',.03],['Benzo[a]pyren',.05],['Indeno[1,2,3-cd]pyren',.03],['Dibenz[a,h]anthracen',.005],['Benzo[ghi]perylen',.025]];
+  const de=v=>v.toLocaleString('de-DE',{maximumSignificantDigits:2});
+  let nr=0;const id=()=>'b'+(++nr);
+  const P=(x,y,raum,surface,summe)=>({id:id(),kind:'sample',label:'P'+nr,note:'',x,y,lx:x,ly:y,raum,surface,typ:'PAK',lab:{ref:'',desc:`${raum}, ${SURFACE_NAMES[surface]}`,art:'PAK · Wischprobe',labNr:'BEISPIEL-'+nr,bericht:'BEISPIEL-01',
+    werte:[...pak.map(([p,a])=>({p,r:summe===null?'< 0,50':de(summe*a),u:'µg/m²'})),{p:'Summe 16 EPA-PAK exkl. BG',r:summe===null?'unter BG':de(summe),u:'µg/m²'}]}});
+  const C=(x,y,raum,surface,v)=>({id:id(),kind:'sample',label:'P'+nr,note:'',x,y,lx:x,ly:y,raum,surface,typ:'Chlorid',shape:'square',lab:{ref:'',desc:`${raum}, ${SURFACE_NAMES[surface]}`,art:'Chlorid · Wischprobe',labNr:'BEISPIEL-'+nr,bericht:'BEISPIEL-02',werte:[{p:'Chlorid (Cl)',r:de(v),u:'µg/cm²'}]}});
+  const A=(x,y,raum,text)=>({id:id(),kind:'sample',label:'P'+nr,note:'',x,y,lx:x,ly:y,raum,surface:'floor',typ:'Asbest',shape:'diamond',lab:{ref:'',desc:`${raum}, Bodenbelag`,art:'Asbest · Materialprobe',labNr:'BEISPIEL-'+nr,bericht:'BEISPIEL-03',werte:[{p:'Asbest',r:text,u:''}]}});
+  const eg=[[40,40,560,360,'Küche',1],[600,40,560,360,'Wohnzimmer'],[40,400,560,360,'Flur'],[600,400,560,360,'Bad / HWR']];
+  const og=[[40,40,560,360,'Schlafzimmer'],[600,40,560,360,'Kinderzimmer'],[40,400,560,360,'Flur OG'],[600,400,560,360,'Büro']];
+  const dg=[[40,40,1120,360,'Dachboden'],[40,400,560,360,'Abstellraum'],[600,400,560,360,'Treppe']];
+  const plan=(name,r)=>({name,width:1200,height:800,data:svg(r,tueren),vector:true});
+  const m0=[{id:'brand1',kind:'fire',label:'B1',note:'',x:170,y:150,lx:170,ly:150,raum:'Küche'},P(300,120,'Küche','ceiling',480),P(480,300,'Küche','wall',210),C(140,320,'Küche','wall',14),P(820,160,'Wohnzimmer','ceiling',95),P(1040,300,'Wohnzimmer','floor',22),C(700,330,'Wohnzimmer','wall',7),P(300,560,'Flur','ceiling',130),A(480,680,'Flur','Chrysotil nachgewiesen'),P(900,600,'Bad / HWR','wall',9),C(1060,700,'Bad / HWR','floor',2)];
+  const m1=[P(300,160,'Schlafzimmer','ceiling',60),P(480,320,'Schlafzimmer','floor',14),P(860,200,'Kinderzimmer','ceiling',18),P(320,580,'Flur OG','ceiling',75),C(160,700,'Flur OG','wall',4),P(900,600,'Büro','wall',6),A(1040,700,'Büro','nicht nachgewiesen')];
+  const m2=[P(400,200,'Dachboden','ceiling',12),P(900,180,'Dachboden','floor',null),P(300,600,'Abstellraum','wall',4)];
+  return {format:'probenplan',version:5,plan:plan('EG',eg),markers:m0,nextSample:nr+1,nextFire:2,report:'',date:'2026-11-12',active:0,results:{usage:'residential',parameter:'*',scales:{}},
+    sheets:[{id:'s0',name:'EG'},{id:'s1',name:'1. OG',plan:plan('1. OG',og),markers:m1},{id:'s2',name:'DG',plan:plan('DG',dg),markers:m2}]};
+}
+
+/* ================= Start ================= */
+groesse();
+projektLaden(beispiel(),'Beispielgebäude',true).then(()=>requestAnimationFrame(schleife)).catch(e=>melde(e.message));
+</script>
+</body>
+</html>
