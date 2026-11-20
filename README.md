@@ -6,7 +6,12 @@ GlasKit liest eine PlanKit-Datei (`*.probenplan`) **nur lesend** und zeigt die G
 
 ![Vorschau](docs/vorschau.png)
 
-Aktuelle Version: **1.6.0** (steht oben neben dem Namen).
+Aktuelle Version: **1.6.1** (steht oben neben dem Namen).
+
+## Neu in 1.6.1 (20.11.2026, Audit Lauf 4)
+
+- **Fehler oder Wunsch melden ↗** oben rechts (D3): öffnet die Rückmeldung der Suite mit Programm, Version und – bei einem offenen Projekt – nur der Projektnummer.
+- **Erste CI** (D4, `.github/workflows/tests.yml`, bei PR, auf `main` und nachts): `tests/kopien.mjs` prüft, dass `spektron-ordner.js` byte-gleich mit der Projektzentrale ist und dass PlanKits heutiger Code noch dieselbe Nachzeichnungs-Vorlage erzeugt (ohne die zufälligen IDs); dann `tests/glaskit-check.cjs alle` mit `PLANKIT` und `GLASKIT_PFLICHT=1` – e und f dürfen in der CI nicht mehr still übersprungen werden.
 
 ## Benutzen
 
@@ -77,7 +82,7 @@ Die Bewertungsregeln (VdS-2357-Referenzen, KORROSION-CHLORID v2, Asbest-Befund, 
 
 ## Prüfen
 
-`tests/glaskit-check.cjs` (Playwright, erfundene Daten, Bildschirmfotos nach `tests/out/`): `node tests/glaskit-check.cjs a|b|c|d|e|f|alle` (d = Darstellungen: je eine Prüfung für Modell, Glas, Papier, gewählte Probe im Modell, „Bild speichern“, gesperrter Speicher). Kein Testgerüst, keine CI.
+`tests/glaskit-check.cjs` (Playwright, erfundene Daten, Bildschirmfotos nach `tests/out/`): `node tests/glaskit-check.cjs a|b|c|d|e|f|alle` (d = Darstellungen: je eine Prüfung für Modell, Glas, Papier, gewählte Probe im Modell, „Bild speichern“, gesperrter Speicher). Kein Testgerüst. CI seit 1.6.1: `tests/kopien.mjs` (Kopien wie die Originale) und alle Prüfungen a–f, mit `GLASKIT_PFLICHT=1` (e braucht `PLANKIT`, f die Git-Historie – sonst Fehler statt „übersprungen“).
 
 - **e – Nachzeichnung (1.6.0).** Vorlage `tests/nachzeichnung-vorlage.json`, erzeugt mit PlanKits eigenem Code (`node tests/nachzeichnung-vorlage.mjs <Pfad zu Probenplan>`: `joinTraceRoom`, `traceOpeningOn`, `rotateProject`, `cropProject`, `alignProject`, `validateTrace`, `traceSegments`). Ein Grundriss gerade · um 90° gedreht · gedreht und zugeschnitten · fein ausgerichtet · kalibriert: Wände wie PlanKits Wandliste und auf den Linien des Bildplans, verbundene Kante ohne Wand, gleichnamige Nachbarn mit Wand, Ansicht-Felder an PlanKits nächster Wand auf der Seite der Probe (kalibriert 1 m, sonst 2,5 %), Fotowände am Außenumriss, Abwandlungen mit PlanKits Urteil (ungeprüft, Kette, Selbstbezug, außerhalb, 1 000/1 001 Wände), ungeprüft flach mit Zeile, Zeit für ein Bild mit 1 000 Wänden, Beispielgebäude, Bildschirmfotos des nachgezeichneten 1. OG in allen drei Darstellungen. Mit `PLANKIT=<Pfad>` prüft e zusätzlich die Nachzeichnung des Beispielgebäudes mit PlanKits `validateTrace`/`traceSegments`.
 - **f – Skizzen wie 1.5.0.** Lädt GlasKit 1.5.0 aus Git (`f04ec0a`) neben der aktuellen Fassung mit demselben Projekt und vergleicht Wände, Räume, Fotowände, Felder und die Bilder in Modell, Glas und Papier pixelgenau.

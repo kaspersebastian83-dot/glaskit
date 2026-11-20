@@ -1,0 +1,52 @@
+name: Prüfungen
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '41 3 * * *'   # nachts: meldet, wenn sich spektron-ordner.js (Projektzentrale) oder PlanKits Nachzeichnung geändert haben (Audit Lauf 4, D4)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruefungen:
+    name: GlasKit (Kopien + Chromium, erfundene Daten)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0   # Prüfung f lädt GlasKit 1.5.0 (f04ec0a) aus der Git-Historie
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Projektzentrale und PlanKit daneben holen (Originale der Kopien)
+        run: |
+          git clone --quiet --depth 1 https://github.com/kaspersebastian83-dot/Projektzentrale.git ../projektzentrale
+          git clone --quiet --depth 1 https://github.com/kaspersebastian83-dot/Probenplan.git ../Probenplan
+      - name: Kopien wie die Originale (spektron-ordner.js, Nachzeichnungs-Vorlage aus PlanKits Code)
+        run: node tests/kopien.mjs ../projektzentrale ../Probenplan
+      - name: Playwright installieren (fest, nicht im Repository)
+        run: |
+          npm install --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright@1.56.1
+          echo "NODE_PATH=$RUNNER_TEMP/pw/node_modules" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Prüfungen a–f im Browser
+        run: node tests/glaskit-check.cjs alle
+        env:
+          PLANKIT: ../Probenplan
+          GLASKIT_PFLICHT: '1'
+          LANG: C.UTF-8
+      - name: Bildschirmfotos bei Fehlschlag
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bildschirmfotos
+          path: tests/out/
