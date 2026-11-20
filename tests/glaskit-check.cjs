@@ -366,6 +366,10 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     assert.equal(r6.fotosFlur,3);assert.ok(r6.planAufPlatte,'Modell: Planbild bleibt unter den Wänden auf der Platte');
     if(!process.env.PLANKIT&&process.env.GLASKIT_PFLICHT)throw Error('E: PLANKIT fehlt – in der CI wird die Nachzeichnung des Beispielgebäudes mit PlanKits Code geprüft');
     if(process.env.PLANKIT){   // zusätzlich: Nachzeichnung des Beispielgebäudes mit PlanKits eigenem Code prüfen
+      // wie tests/nachzeichnung-vorlage.mjs: .ts ohne Endung auflösen, Typen entfernen – sonst scheitert ein künftiger Laufzeit-Import in trace.ts (Codex, PR #1)
+      {const M=require('node:module'),fs2=require('node:fs'),{fileURLToPath}=require('node:url');
+        M.registerHooks({resolve(s,c,next){if(s.startsWith('.')&&c.parentURL){const u=new URL(s,c.parentURL);if(!path.extname(u.pathname)&&fs2.existsSync(fileURLToPath(u)+'.ts'))return next(u.href+'.ts',c);}return next(s,c);},
+          load(u,c,next){if(u.endsWith('.ts'))return {format:'module',source:M.stripTypeScriptTypes(fs2.readFileSync(fileURLToPath(u),'utf8'),{mode:'transform'}),shortCircuit:true};return next(u,c);}});}
       const T=await import(require('node:url').pathToFileURL(path.join(process.env.PLANKIT,'src','trace.ts')).href);
       const og=await page.evaluate(()=>{const p=S.geschosse[1].plan;return {trace:p.trace,width:p.width,height:p.height,st:S.geschosse[1].skizze.stuecke};});
       T.validateTrace(og.trace,og);const segs=T.traceSegments(og.trace);
