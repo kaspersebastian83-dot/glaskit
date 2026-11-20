@@ -33,6 +33,8 @@ header svg{width:34px;height:34px;flex:none}
 .btn:hover{background:#f4f9fe;border-color:var(--accent)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 .btn.primary:hover{background:var(--accent2)}
+header .rueck{margin-left:auto;font-size:13px;color:var(--muted,#5b6470);white-space:nowrap}
+header .rueck:hover{color:var(--accent)}
 .btn:focus-visible,.chip:focus-visible,input:focus-visible{outline:3px solid #9cc3ee;outline-offset:1px}
 main{position:relative;flex:1;min-height:0}
 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
@@ -182,11 +184,12 @@ body.modell #ziehen{border-color:#2a2a28;background:rgba(246,244,239,.6);color:#
 <body>
 <header>
   <svg viewBox="44 4 106 101" aria-hidden="true"><g fill="#363A90"><circle cx="93.44" cy="14.19" r="3.15"/><circle cx="117.44" cy="17.06" r="8.1"/><circle cx="75.19" cy="17.94" r="8.1"/><circle cx="94.56" cy="27.06" r="4.18"/><circle cx="130.94" cy="31.94" r="3.15"/><circle cx="60.44" cy="36.94" r="3.15"/><circle cx="119.81" cy="38.81" r="4.18"/><circle cx="71.81" cy="43.06" r="4.18"/><circle cx="102.31" cy="43.81" r="5.78"/><circle cx="139.94" cy="54.19" r="8.1"/><circle cx="54.06" cy="54.69" r="8.1"/><circle cx="86.56" cy="56.44" r="5.78"/><circle cx="103.81" cy="63.94" r="5.78"/><circle cx="121.94" cy="67.44" r="4.18"/><circle cx="74.44" cy="71.06" r="4.18"/><circle cx="133.94" cy="72.19" r="3.15"/><circle cx="62.81" cy="77.06" r="3.15"/><circle cx="99.81" cy="82.56" r="4.18"/><circle cx="119.44" cy="91.44" r="8.1"/><circle cx="75.81" cy="92.19" r="8.1"/><circle cx="99.81" cy="95.56" r="3.15"/></g><g stroke="#363A90"><line x1="93.44" y1="14.19" x2="117.44" y2="17.06" stroke-width="1.4"/><line x1="75.19" y1="17.94" x2="60.44" y2="36.94" stroke-width="1.4"/><line x1="130.94" y1="31.94" x2="139.94" y2="54.19" stroke-width="1.4"/><line x1="54.06" y1="54.69" x2="62.81" y2="77.06" stroke-width="1.4"/><line x1="133.94" y1="72.19" x2="119.44" y2="91.44" stroke-width="1.4"/><line x1="75.81" y1="92.19" x2="99.81" y2="95.56" stroke-width="1.4"/><line x1="94.56" y1="27.06" x2="102.31" y2="43.81" stroke-width="1.17"/><line x1="86.56" y1="56.44" x2="74.44" y2="71.06" stroke-width="1.17"/><line x1="103.81" y1="63.94" x2="121.94" y2="67.44" stroke-width="1.17"/></g></svg>
-  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.6.0</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
+  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.6.1</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
   <div id="projekt"><b id="pName">–</b><span id="pInfo"></span></div>
   <button class="btn primary" id="ordner">Projektordner öffnen</button>
   <button class="btn" id="datei">Plan-Datei öffnen …</button>
   <input type="file" id="dateiWahl" accept=".probenplan,application/json" hidden>
+  <a class="rueck" id="lnkRueck" href="../rueckmeldung/?app=glaskit" target="rueckmeldung" rel="noopener" title="Fehler oder Wunsch melden – öffnet das Rückmeldeformular, Programm, Version und Projektnummer sind schon eingetragen">Fehler oder Wunsch melden ↗</a>
 </header>
 <main id="buehne">
   <canvas id="c" aria-label="Dreidimensionale Ansicht des Gebäudes mit Probenahmestellen"></canvas>
@@ -610,7 +613,7 @@ root.SpektronOrdner = api;
 </script>
 <script>
 'use strict';
-const VERSION='1.6.0';
+const VERSION='1.6.1';
 /* ================= Bewertung: aus PlanKit (src/results.ts) übernommen – dort ändern, hier mitändern ================= */
 const UNRATED='#c3ccd5',BELOW_LIMIT='#749bb5',NOT_DETECTED='#8b83a8',NOT_DETERMINED='#9d8975';
 function labNumber(raw){
@@ -941,6 +944,7 @@ async function projektLaden(p,name,demo=false,quelle={art:demo?'beispiel':'datei
   const ausNutzung=['Wohnen','Büro','Öffentlich','Gesundheit & Labor'].includes(nutzung)?'residential':['Gewerbe/Industrie','Landwirtschaft'].includes(nutzung)?'industrial':undefined;
   const settings=p.results&&typeof p.results==='object'?p.results:ausNutzung?{usage:ausNutzung,parameter:'*',scales:{}}:undefined;
   for(const g of gs)for(const m of g.marker)if(m.kind==='sample')m.b=bewerte(m,settings);
+  rueckLink(!demo&&istProjekt(name)?(SO?SO.projektNr(name):name.split(/[\s_-]/)[0]):'');
   S.geschosse=gs;S.name=name;S.demo=demo;S.quelle=quelle;fotosLeeren();S.offen=Array.isArray(p.pending)?p.pending.length:0;S.massstab=alle;
   S.wahl=null;S.artAus.clear();S.teilchen=[];tourEnde();karteZu();
   S.kam={yaw:-1.5,pitch:.5,zoom:.62,tx:0,ty:0,tz:mitteZ()};S.ziel={...ganz(),dauer:2.6,t:0,von:{...S.kam}};S.t0=performance.now();
@@ -1009,6 +1013,8 @@ async function nutzungLesen(dir){
   try{const o=await bereich(dir,'projekt'),d=o&&o.dir?o.dir:(await unterordner(dir,['_Spektron']))||dir;const h=await d.getFileHandle('_Projekt.json');
     const pj=JSON.parse(await (await h.getFile()).text());if(pj&&typeof pj.nutzung==='string')nutzung=pj.nutzung.trim();}catch{/* ohne Projektdaten */}
 }
+/** Rückmeldung (Audit Lauf 4, D3): wie TeamKit 0.5.1, dazu nur die Projektnummer des offenen Projekts (kein Ort – wie die Leiste). */
+function rueckLink(nr){const a=document.getElementById('lnkRueck');if(a)a.href='../rueckmeldung/?app=glaskit&version='+encodeURIComponent(VERSION)+(nr?'&projekt='+encodeURIComponent(nr):'');}
 const istProjekt=name=>/^\d{2}\.\d{2,6}(?:[\s_-]|$)/.test(String(name).normalize('NFC').trim());
 const PLANKIT_URL='../Probenplan/';   // wie in der Projektzentrale
 const planKitLink=name=>PLANKIT_URL+(name&&istProjekt(name)?'#projekt='+encodeURIComponent(name):'');

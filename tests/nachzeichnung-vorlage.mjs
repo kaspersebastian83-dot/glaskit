@@ -79,6 +79,6 @@ ab.push(urteil('Obergrenze',gross,GP));
 {const x=T.cloneTrace(gross),zuviel={id:'zuviel',x1:50,y1:50,x2:60,y2:60};x.walls.push(zuviel);ab.push({...urteil('1001 Wände',x,GP),trace:null,basis:'Obergrenze',dazuWand:zuviel});}   // nur einmal speichern
 
 const aus={erzeugt:'tests/nachzeichnung-vorlage.mjs',plankit:{version,commit},hinweis:'Erfundene Daten. Neu erzeugen statt von Hand ändern.',ansicht:ANSICHT,varianten,abwandlungen:ab};
-const ziel=join(dirname(fileURLToPath(import.meta.url)),'nachzeichnung-vorlage.json');
+const ziel=process.argv[3]?resolve(process.argv[3]):join(dirname(fileURLToPath(import.meta.url)),'nachzeichnung-vorlage.json');   // 2. Argument: anderer Zielort (tests/kopien.mjs vergleicht so ohne Überschreiben)
 writeFileSync(ziel,JSON.stringify(aus));
 console.log(`geschrieben: ${ziel} (PlanKit ${version} ${commit}) – ${varianten.length} Varianten, ${ab.length} Abwandlungen: `+ab.map(a=>a.name+'='+a.plankit).join(', '));

@@ -45,6 +45,9 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     assert.equal(await page.evaluate(()=>S.quelle.planPfad),'_Spektron/PlanKit');
     assert.ok((await page.evaluate(()=>window.__idb)).includes('mosaik-suite/kv/archiv'));
     assert.match(await page.locator('#pInfo').textContent(),/3 Geschosse · 20 Proben im Plan/);
+    // Rückmeldung (Audit Lauf 4, D3): Programm, Version und nur die Projektnummer, eigenes Fenster
+    assert.equal(await page.getAttribute('#lnkRueck','href'),'../rueckmeldung/?app=glaskit&version=1.6.1&projekt=26.0560');
+    assert.equal(await page.getAttribute('#lnkRueck','target'),'rueckmeldung');
     await page.waitForTimeout(3200);await shot('a1-projekt-offen');
     // 2) Browser will einen Klick → ein Knopf „Projekt … öffnen“, keine Fehlermeldung; erfragt wird nur „read“
     const p2=await ctx.newPage();p2.on('pageerror',e=>fehler.push(e.message));
@@ -361,7 +364,12 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     assert.ok(r6.p15&&Math.abs(r6.p15.y-r6.kanten.y400)<r6.versatz&&r6.p15.y>r6.kanten.y400,'P15 an der oberen Flurwand (nicht an der verbundenen Kante), raumseitig: '+JSON.stringify(r6.p15));
     assert.ok(r6.p16&&Math.abs(r6.p16.x-r6.kanten.x1160)<r6.versatz&&r6.p16.x<r6.kanten.x1160,'P16 an der Außenwand des Büros, raumseitig: '+JSON.stringify(r6.p16));
     assert.equal(r6.fotosFlur,3);assert.ok(r6.planAufPlatte,'Modell: Planbild bleibt unter den Wänden auf der Platte');
+    if(!process.env.PLANKIT&&process.env.GLASKIT_PFLICHT)throw Error('E: PLANKIT fehlt – in der CI wird die Nachzeichnung des Beispielgebäudes mit PlanKits Code geprüft');
     if(process.env.PLANKIT){   // zusätzlich: Nachzeichnung des Beispielgebäudes mit PlanKits eigenem Code prüfen
+      // wie tests/nachzeichnung-vorlage.mjs: .ts ohne Endung auflösen, Typen entfernen – sonst scheitert ein künftiger Laufzeit-Import in trace.ts (Codex, PR #1)
+      {const M=require('node:module'),fs2=require('node:fs'),{fileURLToPath}=require('node:url');
+        M.registerHooks({resolve(s,c,next){if(s.startsWith('.')&&c.parentURL){const u=new URL(s,c.parentURL);if(!path.extname(u.pathname)&&fs2.existsSync(fileURLToPath(u)+'.ts'))return next(u.href+'.ts',c);}return next(s,c);},
+          load(u,c,next){if(u.endsWith('.ts'))return {format:'module',source:M.stripTypeScriptTypes(fs2.readFileSync(fileURLToPath(u),'utf8'),{mode:'transform'}),shortCircuit:true};return next(u,c);}});}
       const T=await import(require('node:url').pathToFileURL(path.join(process.env.PLANKIT,'src','trace.ts')).href);
       const og=await page.evaluate(()=>{const p=S.geschosse[1].plan;return {trace:p.trace,width:p.width,height:p.height,st:S.geschosse[1].skizze.stuecke};});
       T.validateTrace(og.trace,og);const segs=T.traceSegments(og.trace);
@@ -383,6 +391,7 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     // Skizzen-Pläne müssen genau wie in 1.5.0 aussehen: 1.5.0 aus Git neben 1.6.0 laden, dasselbe Projekt (Beispielgebäude von 1.5.0: EG und 1. OG
     // als Skizze, DG als Bild), gleiche Kamera, feste Zeit – Daten (Wände, Räume, Fotowände, Felder) und Pixel in allen drei Darstellungen vergleichen.
     let alt=null;try{alt=require('node:child_process').execSync('git show f04ec0a:index.html',{cwd:root,maxBuffer:1e8,stdio:['ignore','pipe','ignore']}).toString();}catch{/* nicht im Git */}
+    if(!alt&&process.env.GLASKIT_PFLICHT)throw Error('F: GlasKit 1.5.0 (f04ec0a) fehlt im Git – in der CI muss F laufen (checkout mit fetch-depth: 0)');
     if(!alt)console.log('F übersprungen: GlasKit 1.5.0 (f04ec0a) ist in diesem Git nicht vorhanden');
     else{
       fs.writeFileSync(path.join(out,'glaskit-1.5.0.html'),alt);
