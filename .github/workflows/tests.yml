@@ -27,12 +27,13 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - name: Projektzentrale und PlanKit daneben holen (Originale der Kopien)
+      - name: Projektzentrale, PlanKit und ResultKit daneben holen (Originale der Kopien)
         run: |
           git clone --quiet --depth 1 https://github.com/kaspersebastian83-dot/Projektzentrale.git ../projektzentrale
           git clone --quiet --depth 1 https://github.com/kaspersebastian83-dot/Probenplan.git ../Probenplan
-      - name: Kopien wie die Originale (spektron-ordner.js, Nachzeichnungs-Vorlage aus PlanKits Code)
-        run: node tests/kopien.mjs ../projektzentrale ../Probenplan
+          git clone --quiet --depth 1 https://github.com/kaspersebastian83-dot/resultkit.git ../resultkit
+      - name: Kopien wie die Originale (spektron-ordner.js, Nachzeichnungs-Vorlage aus PlanKits Code, Bewertung wie ResultKit/PlanKit)
+        run: node tests/kopien.mjs ../projektzentrale ../Probenplan ../resultkit
       - name: Playwright installieren (fest, nicht im Repository)
         run: |
           npm install --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright@1.56.1
