@@ -46,7 +46,9 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     assert.ok((await page.evaluate(()=>window.__idb)).includes('mosaik-suite/kv/archiv'));
     assert.match(await page.locator('#pInfo').textContent(),/3 Geschosse · 20 Proben im Plan/);
     // Rückmeldung (Audit Lauf 4, D3): Programm, Version und nur die Projektnummer, eigenes Fenster
-    assert.equal(await page.getAttribute('#lnkRueck','href'),'../rueckmeldung/?app=glaskit&version=1.6.1&projekt=26.0560');
+    assert.equal(await page.getAttribute('#lnkRueck','href'),'../rueckmeldung/?app=glaskit&version=1.6.2&projekt=26.0560');
+    assert.equal(await page.textContent('#lnkRueck'),'💬 Rückmeldung ↗');   // E8 (Audit Lauf 5): ein Wort für alle Apps
+    assert.match(await page.getAttribute('#lnkRueck','title'),/^Fehler oder Wunsch melden – /);
     assert.equal(await page.getAttribute('#lnkRueck','target'),'rueckmeldung');
     await page.waitForTimeout(3200);await shot('a1-projekt-offen');
     // 2) Browser will einen Klick → ein Knopf „Projekt … öffnen“, keine Fehlermeldung; erfragt wird nur „read“

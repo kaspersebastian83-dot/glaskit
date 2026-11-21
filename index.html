@@ -184,12 +184,12 @@ body.modell #ziehen{border-color:#2a2a28;background:rgba(246,244,239,.6);color:#
 <body>
 <header>
   <svg viewBox="44 4 106 101" aria-hidden="true"><g fill="#363A90"><circle cx="93.44" cy="14.19" r="3.15"/><circle cx="117.44" cy="17.06" r="8.1"/><circle cx="75.19" cy="17.94" r="8.1"/><circle cx="94.56" cy="27.06" r="4.18"/><circle cx="130.94" cy="31.94" r="3.15"/><circle cx="60.44" cy="36.94" r="3.15"/><circle cx="119.81" cy="38.81" r="4.18"/><circle cx="71.81" cy="43.06" r="4.18"/><circle cx="102.31" cy="43.81" r="5.78"/><circle cx="139.94" cy="54.19" r="8.1"/><circle cx="54.06" cy="54.69" r="8.1"/><circle cx="86.56" cy="56.44" r="5.78"/><circle cx="103.81" cy="63.94" r="5.78"/><circle cx="121.94" cy="67.44" r="4.18"/><circle cx="74.44" cy="71.06" r="4.18"/><circle cx="133.94" cy="72.19" r="3.15"/><circle cx="62.81" cy="77.06" r="3.15"/><circle cx="99.81" cy="82.56" r="4.18"/><circle cx="119.44" cy="91.44" r="8.1"/><circle cx="75.81" cy="92.19" r="8.1"/><circle cx="99.81" cy="95.56" r="3.15"/></g><g stroke="#363A90"><line x1="93.44" y1="14.19" x2="117.44" y2="17.06" stroke-width="1.4"/><line x1="75.19" y1="17.94" x2="60.44" y2="36.94" stroke-width="1.4"/><line x1="130.94" y1="31.94" x2="139.94" y2="54.19" stroke-width="1.4"/><line x1="54.06" y1="54.69" x2="62.81" y2="77.06" stroke-width="1.4"/><line x1="133.94" y1="72.19" x2="119.44" y2="91.44" stroke-width="1.4"/><line x1="75.81" y1="92.19" x2="99.81" y2="95.56" stroke-width="1.4"/><line x1="94.56" y1="27.06" x2="102.31" y2="43.81" stroke-width="1.17"/><line x1="86.56" y1="56.44" x2="74.44" y2="71.06" stroke-width="1.17"/><line x1="103.81" y1="63.94" x2="121.94" y2="67.44" stroke-width="1.17"/></g></svg>
-  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.6.1</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
+  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.6.2</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
   <div id="projekt"><b id="pName">–</b><span id="pInfo"></span></div>
   <button class="btn primary" id="ordner">Projektordner öffnen</button>
   <button class="btn" id="datei">Plan-Datei öffnen …</button>
   <input type="file" id="dateiWahl" accept=".probenplan,application/json" hidden>
-  <a class="rueck" id="lnkRueck" href="../rueckmeldung/?app=glaskit" target="rueckmeldung" rel="noopener" title="Fehler oder Wunsch melden – öffnet das Rückmeldeformular, Programm, Version und Projektnummer sind schon eingetragen">Fehler oder Wunsch melden ↗</a>
+  <a class="rueck" id="lnkRueck" href="../rueckmeldung/?app=glaskit" target="rueckmeldung" rel="noopener" title="Fehler oder Wunsch melden – öffnet das Rückmeldeformular, Programm, Version und Projektnummer sind schon eingetragen">💬 Rückmeldung ↗</a>
 </header>
 <main id="buehne">
   <canvas id="c" aria-label="Dreidimensionale Ansicht des Gebäudes mit Probenahmestellen"></canvas>
@@ -613,7 +613,7 @@ root.SpektronOrdner = api;
 </script>
 <script>
 'use strict';
-const VERSION='1.6.1';
+const VERSION='1.6.2';
 /* ================= Bewertung: aus PlanKit (src/results.ts) übernommen – dort ändern, hier mitändern ================= */
 const UNRATED='#c3ccd5',BELOW_LIMIT='#749bb5',NOT_DETECTED='#8b83a8',NOT_DETERMINED='#9d8975';
 function labNumber(raw){
