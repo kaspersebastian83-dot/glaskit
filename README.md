@@ -11,7 +11,7 @@ Aktuelle Version: **1.6.2** (steht oben neben dem Namen).
 ## Neu in 1.6.2 (21.11.2026, Audit Lauf 5)
 
 - **„💬 Rückmeldung ↗“** heißt der Link oben rechts jetzt wie in allen Spektron-Apps (E8, Entscheidung 4); „Fehler oder Wunsch melden“ steht im Tooltip.
-- **Bewertung geprüft** (E4 #7/#8/#10): `tests/kopien.mjs` vergleicht die kopierten Bewertungsregeln mit den Originalen – `labNumber`, `labQualifier`, `vdsScale`, KORROSION-CHLORID v2 (`chloridEinheit`, `chloridScale`, `stufeErreicht`, `vdsRegel`) mit ResultKit `src/bewertung.ts` (= PlanKit `src/results.ts`), `asbestBefund` mit PlanKit `src/results.ts` und ResultKit `src/uebersicht.ts`. Gleiche Eingaben, gleiches Ergebnis; die CI holt dafür ResultKit daneben. Sonst unverändert.
+- **Bewertung geprüft** (E4 #7/#8/#10): `tests/kopien.mjs` vergleicht die kopierten Bewertungsregeln mit den Originalen – `labNumber`, `labQualifier`, `vdsScale`, KORROSION-CHLORID v2 (`chloridEinheit`, `chloridScale`, `stufeErreicht`, `vdsRegel`) und `rate` (Stufe und Farbe je Wert, auch genau an den Grenzen) jeweils mit PlanKit `src/results.ts` **und** ResultKit `src/bewertung.ts`, `asbestBefund` mit PlanKit `src/results.ts` und ResultKit `src/uebersicht.ts`. Gleiche Eingaben, gleiches Ergebnis; die CI holt dafür ResultKit daneben. Sonst unverändert.
 
 ## Neu in 1.6.1 (20.11.2026, Audit Lauf 4)
 
