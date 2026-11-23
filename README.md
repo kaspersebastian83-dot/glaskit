@@ -6,7 +6,11 @@ GlasKit liest eine PlanKit-Datei (`*.probenplan`) **nur lesend** und zeigt die G
 
 ![Vorschau](docs/vorschau.png)
 
-Aktuelle Version: **1.6.2** (steht oben neben dem Namen).
+Aktuelle Version: **1.6.3** (steht oben neben dem Namen).
+
+## Neu in 1.6.3 (23.11.2026)
+
+- **Fehler behoben:** Der gestrichelte, pulsierende Ring um eine gewählte Probe konnte einen negativen Radius bekommen, wenn die Probe gerade erst einblendete (z. B. direkt nach dem Laden oder Ein-/Ausblenden eines Geschosses) – dann brach das Zeichnen dieses einen Bildes ab. Der Radius ist jetzt nach unten auf 0 begrenzt (Probe, Probe im Modell, Wischfeld). Prüfung d prüft das fest in allen drei Darstellungen. Sonst unverändert.
 
 ## Neu in 1.6.2 (21.11.2026, Audit Lauf 5)
 
