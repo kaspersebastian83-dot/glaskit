@@ -46,7 +46,7 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     assert.ok((await page.evaluate(()=>window.__idb)).includes('mosaik-suite/kv/archiv'));
     assert.match(await page.locator('#pInfo').textContent(),/3 Geschosse · 20 Proben im Plan/);
     // Rückmeldung (Audit Lauf 4, D3): Programm, Version und nur die Projektnummer, eigenes Fenster
-    assert.equal(await page.getAttribute('#lnkRueck','href'),'../rueckmeldung/?app=glaskit&version=1.6.2&projekt=26.0560');
+    assert.equal(await page.getAttribute('#lnkRueck','href'),'../rueckmeldung/?app=glaskit&version=1.6.3&projekt=26.0560');
     assert.equal(await page.textContent('#lnkRueck'),'💬 Rückmeldung ↗');   // E8 (Audit Lauf 5): ein Wort für alle Apps
     assert.match(await page.getAttribute('#lnkRueck','title'),/^Fehler oder Wunsch melden – /);
     assert.equal(await page.getAttribute('#lnkRueck','target'),'rueckmeldung');
@@ -254,6 +254,13 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     await p3.goto(url);await p3.waitForFunction(()=>typeof S!=='undefined'&&S.geschosse.length===3);
     assert.equal(await p3.evaluate(()=>S.stil),'modell');await p3.locator('#sBeispiel').click();await p3.locator('#glas').click();assert.equal(await p3.evaluate(()=>S.stil),'glas');
     await p3.close();
+    // 1.6.3: gewählte Probe, die gerade erst einblendet (ein ≈ 0), bei tiefster Stelle des Pulsierens → Ring-Radius darf nicht negativ werden
+    // (nächtlicher CI-Lauf 23.11.2026: „arc … radius (-0.777714) is negative“; hing vom Zeitpunkt ab, jetzt fest geprüft)
+    const ring=await page.evaluate(()=>{const jetzt=300*(Math.PI*1.5+2*Math.PI*100),aus=[];   // sin(jetzt/300) = -1
+      for(const stil of ['modell','glas','papier']){stilSetzen(stil,false);for(const g of S.geschosse)for(const m of g.marker){if(m.kind==='fire')continue;S.wahl=m;
+        try{(MODELL()?probeModell:kugel)(m,g,0,jetzt,.01);}catch(e){aus.push(stil+' '+m.label+': '+e.message);}}}
+      S.wahl=null;stilSetzen('modell',false);return aus;});
+    assert.deepEqual(ring,[],'Wahl-Ring beim Einblenden: kein negativer Radius');
     console.log('D ok');
   }
   if(soll('e')){

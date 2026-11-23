@@ -184,7 +184,7 @@ body.modell #ziehen{border-color:#2a2a28;background:rgba(246,244,239,.6);color:#
 <body>
 <header>
   <svg viewBox="44 4 106 101" aria-hidden="true"><g fill="#363A90"><circle cx="93.44" cy="14.19" r="3.15"/><circle cx="117.44" cy="17.06" r="8.1"/><circle cx="75.19" cy="17.94" r="8.1"/><circle cx="94.56" cy="27.06" r="4.18"/><circle cx="130.94" cy="31.94" r="3.15"/><circle cx="60.44" cy="36.94" r="3.15"/><circle cx="119.81" cy="38.81" r="4.18"/><circle cx="71.81" cy="43.06" r="4.18"/><circle cx="102.31" cy="43.81" r="5.78"/><circle cx="139.94" cy="54.19" r="8.1"/><circle cx="54.06" cy="54.69" r="8.1"/><circle cx="86.56" cy="56.44" r="5.78"/><circle cx="103.81" cy="63.94" r="5.78"/><circle cx="121.94" cy="67.44" r="4.18"/><circle cx="74.44" cy="71.06" r="4.18"/><circle cx="133.94" cy="72.19" r="3.15"/><circle cx="62.81" cy="77.06" r="3.15"/><circle cx="99.81" cy="82.56" r="4.18"/><circle cx="119.44" cy="91.44" r="8.1"/><circle cx="75.81" cy="92.19" r="8.1"/><circle cx="99.81" cy="95.56" r="3.15"/></g><g stroke="#363A90"><line x1="93.44" y1="14.19" x2="117.44" y2="17.06" stroke-width="1.4"/><line x1="75.19" y1="17.94" x2="60.44" y2="36.94" stroke-width="1.4"/><line x1="130.94" y1="31.94" x2="139.94" y2="54.19" stroke-width="1.4"/><line x1="54.06" y1="54.69" x2="62.81" y2="77.06" stroke-width="1.4"/><line x1="133.94" y1="72.19" x2="119.44" y2="91.44" stroke-width="1.4"/><line x1="75.81" y1="92.19" x2="99.81" y2="95.56" stroke-width="1.4"/><line x1="94.56" y1="27.06" x2="102.31" y2="43.81" stroke-width="1.17"/><line x1="86.56" y1="56.44" x2="74.44" y2="71.06" stroke-width="1.17"/><line x1="103.81" y1="63.94" x2="121.94" y2="67.44" stroke-width="1.17"/></g></svg>
-  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.6.2</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
+  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.6.3</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
   <div id="projekt"><b id="pName">–</b><span id="pInfo"></span></div>
   <button class="btn primary" id="ordner">Projektordner öffnen</button>
   <button class="btn" id="datei">Plan-Datei öffnen …</button>
@@ -613,7 +613,7 @@ root.SpektronOrdner = api;
 </script>
 <script>
 'use strict';
-const VERSION='1.6.2';
+const VERSION='1.6.3';
 /* ================= Bewertung: aus PlanKit (src/results.ts) übernommen – dort ändern, hier mitändern ================= */
 const UNRATED='#c3ccd5',BELOW_LIMIT='#749bb5',NOT_DETECTED='#8b83a8',NOT_DETERMINED='#9d8975';
 function labNumber(raw){
@@ -1273,7 +1273,7 @@ function kugel(m,g,z,jetzt,ein){
   else cx.arc(kopf.x,kopf.y,r,0,7);
   const kg=cx.createRadialGradient(kopf.x-r*.35,kopf.y-r*.4,r*.1,kopf.x,kopf.y,r*1.3);kg.addColorStop(0,'#fff');kg.addColorStop(.25,b.farbe);kg.addColorStop(1,b.farbe);
   cx.fillStyle=kg;cx.fill();cx.lineWidth=gew?3:1.6;cx.strokeStyle=gew?'#fff':'rgba(255,255,255,.85)';cx.stroke();
-  if(gew){cx.beginPath();cx.arc(kopf.x,kopf.y,r*1.9+2*Math.sin(jetzt/300),0,7);cx.strokeStyle='rgba(255,255,255,.7)';cx.lineWidth=1.5;cx.setLineDash([5,4]);cx.stroke();cx.setLineDash([]);}
+  if(gew){cx.beginPath();cx.arc(kopf.x,kopf.y,Math.max(0,r*1.9+2*Math.sin(jetzt/300)),0,7);cx.strokeStyle='rgba(255,255,255,.7)';cx.lineWidth=1.5;cx.setLineDash([5,4]);cx.stroke();cx.setLineDash([]);}
   // Beschriftung
   cx.font='600 12.5px '+SCHRIFT;cx.textAlign='left';cx.textBaseline='middle';const text=S.werte&&b.text?`${m.label}  ${b.text}`:m.label;
   cx.lineWidth=3.5;cx.strokeStyle='rgba(6,14,26,.85)';cx.strokeText(text,kopf.x+r+6,kopf.y);cx.fillStyle='#fff';cx.fillText(text,kopf.x+r+6,kopf.y);
@@ -1421,7 +1421,7 @@ function probeModell(m,g,z,jetzt,ein){
   formPfad(f,kopf.x+1.3,kopf.y+2.2,r+1.2);cx.fillStyle='rgba(50,42,30,.2)';cx.fill();   // Schlagschatten ohne Weichzeichner
   const ring=gew?3:2.2;formPfad(f,kopf.x,kopf.y,r);cx.fillStyle=b.farbe;cx.fill();cx.lineWidth=ring;cx.strokeStyle='#fff';cx.stroke();
   formPfad(f,kopf.x,kopf.y,r+ring/2+.45);cx.lineWidth=.9;cx.strokeStyle='rgba(42,42,40,.85)';cx.stroke();
-  if(gew){cx.beginPath();cx.arc(kopf.x,kopf.y,r*1.9+2*Math.sin(jetzt/300),0,7);cx.strokeStyle='rgba(42,42,40,.6)';cx.lineWidth=1.3;cx.setLineDash([5,4]);cx.stroke();cx.setLineDash([]);}
+  if(gew){cx.beginPath();cx.arc(kopf.x,kopf.y,Math.max(0,r*1.9+2*Math.sin(jetzt/300)),0,7);cx.strokeStyle='rgba(42,42,40,.6)';cx.lineWidth=1.3;cx.setLineDash([5,4]);cx.stroke();cx.setLineDash([]);}
   cx.font='600 12.5px '+SCHRIFT;cx.textAlign='left';cx.textBaseline='middle';const text=S.werte&&b.text?`${m.label}  ${b.text}`:m.label;
   cx.lineJoin='round';cx.lineWidth=3.5;cx.strokeStyle=MOD.halo;cx.strokeText(text,kopf.x+r+6,kopf.y);cx.fillStyle=MOD.text;cx.fillText(text,kopf.x+r+6,kopf.y);
   if(fotosVon(m).length)kamera(kopf.x+r+6+cx.measureText(text).width+12,kopf.y);
@@ -1504,7 +1504,7 @@ function feldZeichnen(m,g,z,jetzt,ein){
   const ring=gew?3:2.2;pfad();
   if(mod){cx.lineWidth=ring*2+1.7;cx.strokeStyle='rgba(42,42,40,.85)';cx.stroke();}
   cx.lineWidth=ring*2;cx.strokeStyle='#fff';cx.stroke();cx.fillStyle=b.farbe;cx.fill();
-  if(gew){cx.beginPath();cx.arc(mi.x,mi.y,R*1.7+2*Math.sin(jetzt/300),0,7);cx.strokeStyle=mod?'rgba(42,42,40,.6)':'rgba(255,255,255,.7)';cx.lineWidth=1.4;cx.setLineDash([5,4]);cx.stroke();cx.setLineDash([]);}
+  if(gew){cx.beginPath();cx.arc(mi.x,mi.y,Math.max(0,R*1.7+2*Math.sin(jetzt/300)),0,7);cx.strokeStyle=mod?'rgba(42,42,40,.6)':'rgba(255,255,255,.7)';cx.lineWidth=1.4;cx.setLineDash([5,4]);cx.stroke();cx.setLineDash([]);}
   cx.font='600 12.5px '+SCHRIFT;cx.textAlign='left';cx.textBaseline='middle';const text=S.werte&&b.text?`${m.label}  ${b.text}`:m.label,tx=rechts+ring+5;
   cx.lineWidth=3.5;cx.strokeStyle=mod?MOD.halo:'rgba(6,14,26,.85)';cx.strokeText(text,tx,mi.y);cx.fillStyle=mod?MOD.text:'#fff';cx.fillText(text,tx,mi.y);
   if(fotosVon(m).length)kamera(tx+cx.measureText(text).width+12,mi.y);
