@@ -39,7 +39,7 @@ jobs:
           npm install --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright@1.56.1
           echo "NODE_PATH=$RUNNER_TEMP/pw/node_modules" >> "$GITHUB_ENV"
           "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install --with-deps chromium
-      - name: Prüfungen a–f im Browser
+      - name: Prüfungen a–g im Browser
         run: node tests/glaskit-check.cjs alle
         env:
           PLANKIT: ../Probenplan

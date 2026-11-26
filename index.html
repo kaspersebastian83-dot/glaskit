@@ -184,7 +184,7 @@ body.modell #ziehen{border-color:#2a2a28;background:rgba(246,244,239,.6);color:#
 <body>
 <header>
   <svg viewBox="44 4 106 101" aria-hidden="true"><g fill="#363A90"><circle cx="93.44" cy="14.19" r="3.15"/><circle cx="117.44" cy="17.06" r="8.1"/><circle cx="75.19" cy="17.94" r="8.1"/><circle cx="94.56" cy="27.06" r="4.18"/><circle cx="130.94" cy="31.94" r="3.15"/><circle cx="60.44" cy="36.94" r="3.15"/><circle cx="119.81" cy="38.81" r="4.18"/><circle cx="71.81" cy="43.06" r="4.18"/><circle cx="102.31" cy="43.81" r="5.78"/><circle cx="139.94" cy="54.19" r="8.1"/><circle cx="54.06" cy="54.69" r="8.1"/><circle cx="86.56" cy="56.44" r="5.78"/><circle cx="103.81" cy="63.94" r="5.78"/><circle cx="121.94" cy="67.44" r="4.18"/><circle cx="74.44" cy="71.06" r="4.18"/><circle cx="133.94" cy="72.19" r="3.15"/><circle cx="62.81" cy="77.06" r="3.15"/><circle cx="99.81" cy="82.56" r="4.18"/><circle cx="119.44" cy="91.44" r="8.1"/><circle cx="75.81" cy="92.19" r="8.1"/><circle cx="99.81" cy="95.56" r="3.15"/></g><g stroke="#363A90"><line x1="93.44" y1="14.19" x2="117.44" y2="17.06" stroke-width="1.4"/><line x1="75.19" y1="17.94" x2="60.44" y2="36.94" stroke-width="1.4"/><line x1="130.94" y1="31.94" x2="139.94" y2="54.19" stroke-width="1.4"/><line x1="54.06" y1="54.69" x2="62.81" y2="77.06" stroke-width="1.4"/><line x1="133.94" y1="72.19" x2="119.44" y2="91.44" stroke-width="1.4"/><line x1="75.81" y1="92.19" x2="99.81" y2="95.56" stroke-width="1.4"/><line x1="94.56" y1="27.06" x2="102.31" y2="43.81" stroke-width="1.17"/><line x1="86.56" y1="56.44" x2="74.44" y2="71.06" stroke-width="1.17"/><line x1="103.81" y1="63.94" x2="121.94" y2="67.44" stroke-width="1.17"/></g></svg>
-  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.6.3</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
+  <div class="brand"><b>GlasKit <small id="version" title="Version">v1.6.4</small></b><span>Das Gebäude aus Glas · Spektron</span></div>
   <div id="projekt"><b id="pName">–</b><span id="pInfo"></span></div>
   <button class="btn primary" id="ordner">Projektordner öffnen</button>
   <button class="btn" id="datei">Plan-Datei öffnen …</button>
@@ -613,7 +613,7 @@ root.SpektronOrdner = api;
 </script>
 <script>
 'use strict';
-const VERSION='1.6.3';
+const VERSION='1.6.4';
 /* ================= Bewertung: aus PlanKit (src/results.ts) übernommen – dort ändern, hier mitändern ================= */
 const UNRATED='#c3ccd5',BELOW_LIMIT='#749bb5',NOT_DETECTED='#8b83a8',NOT_DETERMINED='#9d8975';
 function labNumber(raw){
@@ -1150,13 +1150,21 @@ const fotosVon=m=>m&&S.fotos&&S.fotos.status==='ok'?S.fotos.map.get(m.label)||[]
 /* --- Bilder lesen: nacheinander (Fotos können 48 MP haben), verkleinert, EXIF-Ausrichtung + FotoKit-Drehung, als JPEG im Speicher --- */
 const VORSCHAU=new Map(),KARTE_PX=720;let fotoKette=Promise.resolve();   // Karte: 720 px (scharf auch bei doppelter Pixeldichte), Großansicht: bis 2400 px
 const istHeic=n=>/\.(heic|heif)$/i.test(n);
+/** Foto über seinen FotoKit-Schlüssel (FotoKit ab 2.7.0, O2/O3): „Datei“ direkt in „Fotos“ oder „Unterordner/Datei“ – genau eine
+    Ebene, „/“ als Trenner, erst der Ordner, dann die Datei. Ein Ordnerteil, der leer ist, „..“ heißt oder mit „_“ oder „.“ beginnt,
+    wird nicht gelesen. Wirft, wenn das Foto fehlt (fotoBild macht daraus „Datei fehlt“). */
+async function fotoDatei(dir,schluessel){
+  const teile=String(schluessel).split('/');if(teile.length===1)return (await dir.getFileHandle(schluessel)).getFile();
+  const [ordner,datei]=teile;if(teile.length!==2||!ordner||ordner==='..'||/^[_.]/.test(ordner))throw Error('nicht lesbarer Unterordner');
+  return (await (await dir.getDirectoryHandle(ordner)).getFileHandle(datei)).getFile();
+}
 function fotoBild(f,lang){
   const key=`${f.name}|${lang}`;if(VORSCHAU.has(key))return VORSCHAU.get(key);
   if(f.canvas){const p=new Promise(r=>f.canvas.toBlob(b=>{if(!b){r({fehler:'format'});return;}const url=URL.createObjectURL(b);FOTO_URLS.add(url);r({url,b:f.canvas.width,h:f.canvas.height});},'image/jpeg',.9));VORSCHAU.set(key,p);return p;}
   const fotos=S.fotos;
   const p=fotoKette=fotoKette.catch(()=>{}).then(async()=>{
     if(S.fotos!==fotos)return {fehler:'weg'};
-    let file;try{file=await (await fotos.dir.getFileHandle(f.name)).getFile();}catch{return {fehler:'fehlt'};}
+    let file;try{file=await fotoDatei(fotos.dir,f.name);}catch{return {fehler:'fehlt'};}
     let bmp;try{bmp=await createImageBitmap(file,{imageOrientation:'from-image',resizeWidth:lang,resizeQuality:'high'});}
     catch{return {fehler:istHeic(f.name)?'heic':'format'};}
     try{
