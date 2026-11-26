@@ -1,4 +1,4 @@
-// GlasKit – Prüfung im echten Browser mit erfundenen Daten (keine Kundendaten): node tests/glaskit-check.cjs [a|b|c|d|e|f|alle]
+// GlasKit – Prüfung im echten Browser mit erfundenen Daten (keine Kundendaten): node tests/glaskit-check.cjs [a|b|c|d|e|f|g|alle]
 // Braucht Playwright (z. B. NODE_PATH auf ein node_modules mit „playwright“). Legt im privaten Dateisystem des Browsers (OPFS)
 // einen Archivordner mit erfundenen Projekten an, merkt ihn wie die Projektzentrale in IndexedDB „mosaik-suite“ und öffnet
 // GlasKit mit #projekt=… . Bildschirmfotos landen in tests/out/.
@@ -46,7 +46,7 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
     assert.ok((await page.evaluate(()=>window.__idb)).includes('mosaik-suite/kv/archiv'));
     assert.match(await page.locator('#pInfo').textContent(),/3 Geschosse · 20 Proben im Plan/);
     // Rückmeldung (Audit Lauf 4, D3): Programm, Version und nur die Projektnummer, eigenes Fenster
-    assert.equal(await page.getAttribute('#lnkRueck','href'),'../rueckmeldung/?app=glaskit&version=1.6.3&projekt=26.0560');
+    assert.equal(await page.getAttribute('#lnkRueck','href'),'../rueckmeldung/?app=glaskit&version=1.6.4&projekt=26.0560');
     assert.equal(await page.textContent('#lnkRueck'),'💬 Rückmeldung ↗');   // E8 (Audit Lauf 5): ein Wort für alle Apps
     assert.match(await page.getAttribute('#lnkRueck','title'),/^Fehler oder Wunsch melden – /);
     assert.equal(await page.getAttribute('#lnkRueck','target'),'rueckmeldung');
@@ -423,6 +423,40 @@ const PROJ='26.0560 Teststr. Gladbeck Dr.Ka',LEER='26.0561 Ohneplan Dr.Ka';
       await pa.close();
       console.log('F ok (Skizzen-Pläne pixelgleich mit 1.5.0 in Modell, Glas, Papier)');
     }
+  }
+  if(soll('g')){
+    // Fotos in Unterordnern von „Fotos“ (FotoKit ab 2.7.0, O2/O3/O10): Schlüssel „Unterordner/Datei“, genau eine Ebene. Ungültige Wege
+    // (leerer Ordnerteil, „..“, „_…“, „.…“, tiefer) werden nicht gelesen – „Datei fehlt“, obwohl dort eine Datei läge.
+    await page.goto(url);await page.waitForFunction(()=>typeof S!=='undefined'&&S.geschosse.length===3);
+    const UNGUELTIG={P14:'_aussortiert/IMG_0103.jpg',P15:'.versteckt/IMG_0104.jpg',P16:'../IMG_0105.jpg',P17:'Bilder A/Tiefer/IMG_0106.jpg',P18:'/IMG_0107.jpg',P19:'Bilder A/'};
+    await page.evaluate(async([PROJ,UNGUELTIG])=>{
+      const r=await navigator.storage.getDirectory(),pj=await (await r.getDirectoryHandle('Mosaik Archivordner')).getDirectoryHandle(PROJ),sp=await pj.getDirectoryHandle('_Spektron');
+      const fk=await sp.getDirectoryHandle('FotoKit',{create:true}),dir=async(teile,d=pj)=>{for(const t of teile)d=await d.getDirectoryHandle(t,{create:true});return d;};
+      const schreibe=async(d,n,t)=>{const w=await (await d.getFileHandle(n,{create:true})).createWritable();await w.write(t);await w.close();};
+      const jpg=async(w,h,farbe,text)=>{const c=new OffscreenCanvas(w,h),g=c.getContext('2d');g.fillStyle=farbe;g.fillRect(0,0,w,h);g.fillStyle='#fff';g.font=`bold ${Math.round(h/7)}px sans-serif`;g.textAlign='center';g.fillText(text,w/2,h/2);return await c.convertToBlob({type:'image/jpeg',quality:.8});};
+      await schreibe(await dir(['Fotos','Bilder A']),'IMG_0101.jpg',await jpg(1000,600,'#8a3f10','Ordner A'));
+      await schreibe(await dir(['Fotos','Bilder B']),'IMG_0101.jpg',await jpg(600,1000,'#3f7cc0','Ordner B'));   // gleicher Dateiname, hochkant
+      await schreibe(await dir(['Fotos']),'IMG_0102.jpg',await jpg(800,600,'#2e7d32','direkt'));
+      const ziel={'_aussortiert/IMG_0103.jpg':['Fotos','_aussortiert'],'.versteckt/IMG_0104.jpg':['Fotos','.versteckt'],'../IMG_0105.jpg':[],'Bilder A/Tiefer/IMG_0106.jpg':['Fotos','Bilder A','Tiefer'],'/IMG_0107.jpg':['Fotos']};
+      for(const [k,t] of Object.entries(ziel))await schreibe(await dir(t),k.split('/').pop(),await jpg(400,300,'#555','ungueltig'));
+      const bilder={'Bilder A/IMG_0101.jpg':{beschreibung:'Testfoto Ordner A',probe:'P11'},'Bilder B/IMG_0101.jpg':{beschreibung:'Testfoto Ordner B',probe:'P12'},'IMG_0102.jpg':{beschreibung:'Testfoto direkt',probe:'P13'}};
+      for(const [p,k] of Object.entries(UNGUELTIG))bilder[k]={beschreibung:'ungültiger Weg',probe:p};
+      await schreibe(fk,'_Bildumbenenner.json',JSON.stringify({app:'Bildumbenenner',format:1,version:'2.7.0',reihenfolge:Object.keys(bilder),bilder}));
+    },[PROJ,UNGUELTIG]);
+    await page.goto(url+'#projekt='+encodeURIComponent(PROJ));await page.reload();
+    await page.waitForFunction(n=>S.quelle.art==='ordner'&&S.quelle.name===n&&S.fotos&&S.fotos.status==='ok',PROJ);
+    const waehle=async l=>{await page.evaluate(l=>{S.dreh=false;const g=S.geschosse.find(g=>g.marker.some(m=>m.label===l)),m=g.marker.find(m=>m.label===l);waehle(m,g,true);},l);};
+    const gross=async l=>{await waehle(l);await page.locator('#kFotos .gross img').waitFor({timeout:15000}).catch(async()=>{throw Error(`${l}: kein Bild – „${await page.locator('#kFotos .gross').textContent()}“`);});return page.locator('#kFotos .gross img').evaluate(i=>[i.naturalWidth,i.naturalHeight]);};
+    const a=await gross('P11');assert.ok(a[0]>a[1],'Bilder A/IMG_0101.jpg quer '+a);
+    assert.match(await page.locator('#kFotos .datei').textContent(),/Bilder A\/IMG_0101\.jpg/);
+    const b=await gross('P12');assert.ok(b[1]>b[0],'Bilder B/IMG_0101.jpg hochkant (gleicher Dateiname, anderer Ordner) '+b);
+    await gross('P13');
+    await shot('g1-foto-im-unterordner');
+    for(const l of Object.keys(UNGUELTIG)){await waehle(l);await page.locator('#kFotos .gross .fotohinweis').filter({hasText:'Datei fehlt'}).waitFor({timeout:15000});}
+    // Fotowand-Bilder gehen über denselben Weg (fotoBild): gültiger Weg = Bild, ungültiger = fehlt
+    const r=await page.evaluate(async keys=>{const o={};for(const k of keys){const x=await fotoBild({name:k,drehung:0},64);o[k]=x.url?'bild':x.fehler;}return o;},['Bilder A/IMG_0101.jpg','Bilder B/IMG_0101.jpg','IMG_0102.jpg','Bilder A/fehlt.jpg',...Object.values(UNGUELTIG)]);
+    assert.deepEqual(r,{'Bilder A/IMG_0101.jpg':'bild','Bilder B/IMG_0101.jpg':'bild','IMG_0102.jpg':'bild','Bilder A/fehlt.jpg':'fehlt',...Object.fromEntries(Object.values(UNGUELTIG).map(k=>[k,'fehlt']))});
+    console.log('G ok (Fotos in Unterordnern über den Weg, ungültige Wege „Datei fehlt“)');
   }
   assert.deepEqual(fehler,[]);
   await browser.close();server.close();console.log('OK',welche);

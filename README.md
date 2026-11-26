@@ -6,7 +6,11 @@ GlasKit liest eine PlanKit-Datei (`*.probenplan`) **nur lesend** und zeigt die G
 
 ![Vorschau](docs/vorschau.png)
 
-Aktuelle Version: **1.6.3** (steht oben neben dem Namen).
+Aktuelle Version: **1.6.4** (steht oben neben dem Namen).
+
+## Neu in 1.6.4 (26.11.2026)
+
+- **Fotos in Unterordnern von „Fotos“** (vor FotoKit 2.7.0, Spektron-Projekt `fotokit-ortstermine-entscheidungen.md` O2/O3/O10): Führt FotoKit ein Foto unter „Unterordner/Datei“ (z. B. `bilder["Bilder A/IMG_0001.jpg"]`), liest GlasKit es dort – in der Probenkarte, der Großansicht und auf den Fotowänden (`fotoBild` → `fotoDatei`). Bisher stand dort „Datei fehlt im Ordner „Fotos““. Genau eine Ebene; ein Ordnerteil, der leer ist, „..“ heißt oder mit „_“ oder „.“ beginnt, und tiefere Wege werden nicht gelesen (weiter „Datei fehlt“). Fotos direkt in „Fotos“ wie bisher. Neu Prüfung g. Sonst unverändert.
 
 ## Neu in 1.6.3 (23.11.2026)
 
@@ -79,7 +83,7 @@ Eigene Zeichenwege (`platteModell`, `wandModell`, `probeModell`, `brandModell`, 
 
 ## Fotos (FotoKit)
 
-`_Bildumbenenner.json` am Ort nach `spektron-ordner.js` (`_Spektron/FotoKit`, früher `Fotos/`): `bilder[<Dateiname>] = {beschreibung, abschnitt, probe, drehung, aussortiert, …}` – die Bilder selbst liegen in `Fotos/<Dateiname>`. Gleiche Regel wie PlanKits „Anlage Probenahme“ (`annex-run.ts`): aussortierte und Fotos ohne Probe-Nr. zählen nicht, Reihenfolge `reihenfolge`, Probe-Nr. wie `photoLabels()` („P1, p 2; Probe 3“, Bohrkern-IDs über die LabelKit-Datei des Projekts). Bilder werden erst beim Öffnen der Karte gelesen, nacheinander, mit EXIF-Ausrichtung und FotoKit-Drehung auf 720 px (Karte) bzw. bis 2400 px (Großansicht) verkleinert und nur im Speicher gehalten.
+`_Bildumbenenner.json` am Ort nach `spektron-ordner.js` (`_Spektron/FotoKit`, früher `Fotos/`): `bilder[<Dateiname>] = {beschreibung, abschnitt, probe, drehung, aussortiert, …}` – die Bilder selbst liegen in `Fotos/<Dateiname>` – ab 1.6.4 auch `Fotos/<Unterordner>/<Datei>` unter dem Schlüssel „Unterordner/Datei“ (FotoKit ab 2.7.0, genau eine Ebene; Ordner mit „_“ oder „.“ am Anfang, „..“ und leere Ordnerteile werden nicht gelesen). Gleiche Regel wie PlanKits „Anlage Probenahme“ (`annex-run.ts`): aussortierte und Fotos ohne Probe-Nr. zählen nicht, Reihenfolge `reihenfolge`, Probe-Nr. wie `photoLabels()` („P1, p 2; Probe 3“, Bohrkern-IDs über die LabelKit-Datei des Projekts). Bilder werden erst beim Öffnen der Karte gelesen, nacheinander, mit EXIF-Ausrichtung und FotoKit-Drehung auf 720 px (Karte) bzw. bis 2400 px (Großansicht) verkleinert und nur im Speicher gehalten.
 
 ## Projektübergabe (`#projekt=`)
 
@@ -91,7 +95,8 @@ Die Bewertungsregeln (VdS-2357-Referenzen, KORROSION-CHLORID v2, Asbest-Befund, 
 
 ## Prüfen
 
-`tests/glaskit-check.cjs` (Playwright, erfundene Daten, Bildschirmfotos nach `tests/out/`): `node tests/glaskit-check.cjs a|b|c|d|e|f|alle` (d = Darstellungen: je eine Prüfung für Modell, Glas, Papier, gewählte Probe im Modell, „Bild speichern“, gesperrter Speicher). Kein Testgerüst. CI seit 1.6.1: `tests/kopien.mjs` (Kopien wie die Originale) und alle Prüfungen a–f, mit `GLASKIT_PFLICHT=1` (e braucht `PLANKIT`, f die Git-Historie – sonst Fehler statt „übersprungen“).
+`tests/glaskit-check.cjs` (Playwright, erfundene Daten, Bildschirmfotos nach `tests/out/`): `node tests/glaskit-check.cjs a|b|c|d|e|f|g|alle` (d = Darstellungen: je eine Prüfung für Modell, Glas, Papier, gewählte Probe im Modell, „Bild speichern“, gesperrter Speicher). Kein Testgerüst. CI seit 1.6.1: `tests/kopien.mjs` (Kopien wie die Originale) und alle Prüfungen a–g, mit `GLASKIT_PFLICHT=1` (e braucht `PLANKIT`, f die Git-Historie – sonst Fehler statt „übersprungen“).
 
 - **e – Nachzeichnung (1.6.0).** Vorlage `tests/nachzeichnung-vorlage.json`, erzeugt mit PlanKits eigenem Code (`node tests/nachzeichnung-vorlage.mjs <Pfad zu Probenplan>`: `joinTraceRoom`, `traceOpeningOn`, `rotateProject`, `cropProject`, `alignProject`, `validateTrace`, `traceSegments`). Ein Grundriss gerade · um 90° gedreht · gedreht und zugeschnitten · fein ausgerichtet · kalibriert: Wände wie PlanKits Wandliste und auf den Linien des Bildplans, verbundene Kante ohne Wand, gleichnamige Nachbarn mit Wand, Ansicht-Felder an PlanKits nächster Wand auf der Seite der Probe (kalibriert 1 m, sonst 2,5 %), Fotowände am Außenumriss, Abwandlungen mit PlanKits Urteil (ungeprüft, Kette, Selbstbezug, außerhalb, 1 000/1 001 Wände), ungeprüft flach mit Zeile, Zeit für ein Bild mit 1 000 Wänden, Beispielgebäude, Bildschirmfotos des nachgezeichneten 1. OG in allen drei Darstellungen. Mit `PLANKIT=<Pfad>` prüft e zusätzlich die Nachzeichnung des Beispielgebäudes mit PlanKits `validateTrace`/`traceSegments`.
 - **f – Skizzen wie 1.5.0.** Lädt GlasKit 1.5.0 aus Git (`f04ec0a`) neben der aktuellen Fassung mit demselben Projekt und vergleicht Wände, Räume, Fotowände, Felder und die Bilder in Modell, Glas und Papier pixelgenau.
+- **g – Fotos in Unterordnern (1.6.4).** FotoKit-Schlüssel „Bilder A/IMG_0101.jpg“ und gleichnamig „Bilder B/IMG_0101.jpg“ (quer bzw. hochkant – zwei verschiedene Fotos), ein Foto direkt in „Fotos“; sechs Wege, die nicht gelesen werden dürfen, obwohl dort eine Datei liegt (`_aussortiert/…`, `.versteckt/…`, `../…`, `Bilder A/Tiefer/…`, `/…`, `Bilder A/`), und eine fehlende Datei → „Datei fehlt“.
